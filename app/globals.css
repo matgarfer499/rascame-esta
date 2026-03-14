@@ -1,26 +1,137 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ============================================
+   RÁSCAME ESTA - Industrial Bunker Theme
+   Tailwind CSS v4 custom theme configuration
+   ============================================ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* -- Bunker color palette -- */
+  --color-bunker-950: #0A0A0A;
+  --color-bunker-900: #1A1A1A;
+  --color-bunker-800: #2A2A2A;
+  --color-bunker-700: #3A3A3A;
+  --color-bunker-500: #525252;
+  --color-bunker-400: #737373;
+
+  /* -- Functional accent colors -- */
+  --color-alert: #DC2626;
+  --color-alert-deep: #991B1B;
+  --color-warning: #D97706;
+  --color-military: #15803D;
+  --color-terminal: #22C55E;
+
+  /* -- Text colors -- */
+  --color-text-primary: #E5E5E5;
+  --color-text-dim: #A3A3A3;
+  --color-text-dead: #525252;
+
+  /* -- Font families -- */
+  --font-condensed: var(--font-bebas-neue), sans-serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
+  --font-stencil: var(--font-black-ops-one), monospace;
+
+  /* -- Animation durations (mechanical, not smooth) -- */
+  --animate-duration-fast: 100ms;
+  --animate-duration-normal: 150ms;
+  --animate-duration-slow: 300ms;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* -- Base styles -- */
+:root {
+  --background: #0A0A0A;
+  --foreground: #E5E5E5;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-mono);
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* -- Noise texture overlay (subtle grain on all surfaces) -- */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* -- Scrollbar styling (industrial) -- */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0A0A0A;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3A3A3A;
+}
+
+/* -- Prevent all user selection and copy behavior -- */
+* {
+  -webkit-touch-callout: none;
+}
+
+/* -- Force landscape prevention -- */
+@media (orientation: landscape) and (max-height: 500px) {
+  body::after {
+    content: "VUELVE A POSICIÓN VERTICAL, SOLDADO";
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0A0A0A;
+    color: #DC2626;
+    font-family: var(--font-condensed);
+    font-size: 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2rem;
+    text-align: center;
+  }
+}
+
+/* -- Keyframes for industrial animations -- */
+@keyframes pulse-alert {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes stamp-in {
+  0% { transform: scale(2) rotate(var(--stamp-rotation, -7deg)); opacity: 0; }
+  70% { transform: scale(1.05) rotate(var(--stamp-rotation, -7deg)); opacity: 1; }
+  100% { transform: scale(1) rotate(var(--stamp-rotation, -7deg)); opacity: 1; }
+}
+
+@keyframes shutter-close {
+  0% { transform: scaleY(0); }
+  100% { transform: scaleY(1); }
+}
+
+@keyframes shutter-open {
+  0% { transform: scaleY(1); }
+  100% { transform: scaleY(0); }
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes crack {
+  0% { clip-path: inset(0); opacity: 1; }
+  50% { clip-path: inset(5% 10% 5% 10%); opacity: 0.6; }
+  100% { clip-path: inset(50%); opacity: 0; }
 }
