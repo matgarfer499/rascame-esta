@@ -41,6 +41,7 @@ export default function ConfessionChallenge({
   const streamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number>(0);
   const loudTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const dareTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const currentDare = CONFESSION_DARES[dareIndex] ?? CONFESSION_DARES[0];
 
@@ -113,24 +114,43 @@ export default function ConfessionChallenge({
     }
   }, [onComplete]);
 
-  /** Cleanup audio resources */
+  /** Cleanup audio resources — idempotent: nulls refs so double-calls are safe */
   const cleanup = useCallback(() => {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = 0;
     }
     if (loudTimerRef.current) {
       clearInterval(loudTimerRef.current);
+      loudTimerRef.current = null;
     }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
     }
     if (audioContextRef.current) {
       audioContextRef.current.close();
+      audioContextRef.current = null;
     }
+    analyserRef.current = null;
   }, []);
 
   // Cleanup on unmount
   useEffect(() => cleanup, [cleanup]);
+
+  // Cycle through dares while listening — loops infinitely via modulo
+  useEffect(() => {
+    if (phase !== "listening") return;
+    dareTimerRef.current = setInterval(() => {
+      setDareIndex((i) => (i + 1) % CONFESSION_DARES.length);
+    }, 6000);
+    return () => {
+      if (dareTimerRef.current) {
+        clearInterval(dareTimerRef.current);
+        dareTimerRef.current = null;
+      }
+    };
+  }, [phase]);
 
   /** Give up / fail */
   const handleGiveUp = useCallback(() => {
@@ -158,6 +178,9 @@ export default function ConfessionChallenge({
 
         {/* Dare text */}
         <div className="border-2 border-alert p-4 mb-6">
+          <p className="font-mono text-[10px] text-text-dead uppercase tracking-widest mb-2">
+            REPETID ESTO A GRITOS:
+          </p>
           <p className="font-mono text-sm text-text-primary leading-relaxed">
             &quot;{currentDare}&quot;
           </p>

@@ -63,9 +63,10 @@ export const TRIVIA_QUESTIONS: TriviaQuestion[] = [
  * Order matters: if they fail, the NEXT dare is shown (escalating embarrassment).
  */
 export const CONFESSION_DARES: string[] = [
-  "Los dos tenéis que cantar el Cumpleaños Feliz a vosotros mismos EN VOZ ALTA",
-  "PLACEHOLDER: Un dare más vergonzoso que el anterior",
-  "PLACEHOLDER: El dare más vergonzoso de todos",
+  "El perro de San Roque no tiene rabo porque Ramón Ramírez se lo ha robado",
+  "Erre con erre guitarra, erre con erre barril, rápido ruedan los carros al ferrocarril",
+  "Tres tristes tigres robaron treinta y tres raciones de arroz rojo del refrigerador de Ramiro Rodríguez",
+  "Me he comprado un Ferrari rojo de hierro"
 ];
 
 /**

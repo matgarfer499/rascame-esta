@@ -75,7 +75,7 @@ export const UI = {
     "Demostrad cuánto sabéis el uno del otro. Pantalla dividida, cada uno responde sobre su gemelo.",
   "challenge.confession.name": "LA CONFESIÓN",
   "challenge.confession.description":
-    "Tendréis que hacer algo vergonzoso en voz alta. El micrófono será vuestro juez.",
+    "Tendréis que repetir trabalenguas llenos de ERRES a gritos. El micrófono será vuestro juez.",
   "challenge.memory.name": "MEMORIA GEMELA",
   "challenge.memory.description":
     "Recordad la secuencia correcta. Vuestra memoria compartida será puesta a prueba.",
@@ -90,9 +90,9 @@ export const UI = {
   // -- Confession specific --
   confessionTitle: "LA CONFESIÓN",
   confessionVolumeLabel: "VOLUMEN",
-  confessionLouder: "¡MÁS FUERTE, COBARDES!",
-  confessionIsAllYouGot: "¿Eso es todo?",
-  confessionGrandmaLouder: "Mi abuela grita más",
+  confessionLouder: "¿Ha dicho Hidiogeno?",
+  confessionIsAllYouGot: "¿Eso es una R o un estornudo?",
+  confessionGrandmaLouder: "Mi abuela rrrruge más fuerte",
 
   // -- Memory specific --
   memoryTitle: "MEMORIA GEMELA",
