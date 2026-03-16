@@ -6,6 +6,15 @@
 // =============================================================================
 
 import { useCallback, useMemo } from "react";
+import type { ChallengeId } from "@/lib/types";
+
+/** Short display labels for each challenge, used in the debug overlay. */
+export const DEBUG_CHALLENGE_LABELS: Record<ChallengeId, string> = {
+  1: "Trivia",
+  2: "Confess",
+  3: "Memory",
+  4: "Boss",
+};
 
 const IS_DEBUG = process.env.NEXT_PUBLIC_DEBUG === "true";
 

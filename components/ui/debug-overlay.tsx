@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { ChallengeId, Screen } from "@/lib/types";
+import { DEBUG_CHALLENGE_LABELS } from "@/hooks/use-debug";
 
 // =============================================================================
 // DebugOverlay - Floating panel for desktop testing
@@ -19,6 +20,17 @@ type DebugOverlayProps = {
   cardsRemaining: number;
   onForceScreen?: (screen: Screen) => void;
 };
+
+const SCREEN_JUMPS: { label: string; screen: Screen }[] = [
+  { label: "Intro", screen: { type: "intro" } },
+  { label: "Wall", screen: { type: "wall" } },
+  { label: "Victory", screen: { type: "victory" } },
+];
+
+const CHALLENGE_IDS: ChallengeId[] = [1, 2, 3, 4];
+
+const jumpButtonClass =
+  "bg-bunker-800 border border-bunker-700 px-1 py-0.5 text-[8px] text-text-dim hover:text-terminal hover:border-terminal";
 
 export default function DebugOverlay({
   screen,
@@ -75,28 +87,56 @@ export default function DebugOverlay({
         <p>Remaining: {cardsRemaining}</p>
       </div>
 
-      {/* Quick screen jumps */}
       {onForceScreen && (
-        <div className="mt-1.5 pt-1.5 border-t border-bunker-700">
-          <p className="text-text-dead mb-1">Jump to:</p>
-          <div className="flex flex-wrap gap-1">
-            {(
-              [
-                { label: "Intro", screen: { type: "intro" } },
-                { label: "Wall", screen: { type: "wall" } },
-                { label: "Victory", screen: { type: "victory" } },
-              ] as { label: string; screen: Screen }[]
-            ).map(({ label, screen: targetScreen }) => (
-              <button
-                key={label}
-                onClick={() => onForceScreen(targetScreen)}
-                className="bg-bunker-800 border border-bunker-700 px-1 py-0.5 text-[8px] text-text-dim hover:text-terminal hover:border-terminal"
-              >
-                {label}
-              </button>
-            ))}
+        <>
+          {/* Screen jumps */}
+          <div className="mt-1.5 pt-1.5 border-t border-bunker-700">
+            <p className="text-text-dead mb-1">Screens:</p>
+            <div className="flex flex-wrap gap-1">
+              {SCREEN_JUMPS.map(({ label, screen: target }) => (
+                <button
+                  key={label}
+                  onClick={() => onForceScreen(target)}
+                  className={jumpButtonClass}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+
+          {/* Challenge jumps */}
+          <div className="mt-1.5 pt-1.5 border-t border-bunker-700">
+            <p className="text-text-dead mb-1">Challenges:</p>
+            <div className="grid grid-cols-2 gap-1">
+              {CHALLENGE_IDS.map((id) => (
+                <div key={id} className="flex gap-1">
+                  <button
+                    onClick={() =>
+                      onForceScreen({ type: "challenge-intro", challengeId: id })
+                    }
+                    className={cn(jumpButtonClass, "flex-1")}
+                    title={`${DEBUG_CHALLENGE_LABELS[id]} intro screen`}
+                  >
+                    {DEBUG_CHALLENGE_LABELS[id]} ⓘ
+                  </button>
+                  <button
+                    onClick={() =>
+                      onForceScreen({ type: "challenge", challengeId: id })
+                    }
+                    className={cn(
+                      jumpButtonClass,
+                      "flex-1 text-warning hover:text-warning hover:border-warning",
+                    )}
+                    title={`${DEBUG_CHALLENGE_LABELS[id]} gameplay directly`}
+                  >
+                    ▸
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
