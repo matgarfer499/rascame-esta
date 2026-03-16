@@ -97,6 +97,10 @@ export const UI = {
   // -- Memory specific --
   memoryTitle: "MEMORIA GEMELA",
   memoryRound: "RONDA",
+  memoryTrollRoundLabel: "RONDA FINAL",
+  memoryTrollMessage:
+    "Que era de coña chavales, no sus ralleis que pasasteis el reto",
+  memoryAttempts: "INTENTOS",
 
   // -- Boss specific --
   bossTitle: "AGUANTE DUAL",

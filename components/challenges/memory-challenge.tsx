@@ -8,6 +8,12 @@ import {
   MEMORY_INITIAL_SEQUENCE_LENGTH,
   MEMORY_SEQUENCE_INCREMENT,
   MEMORY_FLASH_DURATION_MS,
+  MEMORY_FLASH_SPEED_DECAY_MS,
+  MEMORY_MAX_ATTEMPTS,
+  MEMORY_TROLL_ROUND,
+  MEMORY_TROLL_SEQUENCE_LENGTH,
+  MEMORY_TROLL_FLASH_DURATION_MS,
+  MEMORY_TROLL_GAP_MS,
 } from "@/lib/constants";
 import { shuffle, delay } from "@/lib/utils";
 import { MEMORY_TILES } from "@/lib/content";
@@ -20,7 +26,9 @@ import {
 
 // =============================================================================
 // MemoryChallenge - Sequence memory game with inside joke tiles
-// Players must repeat a flashing sequence. Rounds get progressively harder.
+// Rounds 1-4 get progressively harder (more tiles, faster flashes).
+// Players have 3 total attempts; a wrong tap on the same round retries it.
+// Round 5 is an impossible troll round that auto-completes on any failure.
 // =============================================================================
 
 type MemoryChallengeProps = {
@@ -28,50 +36,76 @@ type MemoryChallengeProps = {
   onFail: () => void;
 };
 
-type Phase = "showing" | "input" | "round-result" | "done";
+type Phase = "showing" | "input" | "round-result" | "troll-fail" | "done";
+
+/** Returns flash duration (ms) for a given round number. */
+function getFlashDuration(roundNum: number): number {
+  if (roundNum === MEMORY_TROLL_ROUND) return MEMORY_TROLL_FLASH_DURATION_MS;
+  return Math.max(
+    150,
+    MEMORY_FLASH_DURATION_MS - (roundNum - 1) * MEMORY_FLASH_SPEED_DECAY_MS,
+  );
+}
 
 export default function MemoryChallenge({
   onComplete,
   onFail,
 }: MemoryChallengeProps) {
-  // Use 9 tiles shuffled
-  const tiles = useMemo(() => shuffle([...MEMORY_TILES]).slice(0, 9), []);
+  const tiles = useMemo<MemoryTile[]>(
+    () => shuffle([...MEMORY_TILES]).slice(0, 9),
+    [],
+  );
 
   const [round, setRound] = useState(1);
+  const [attempts, setAttempts] = useState(MEMORY_MAX_ATTEMPTS);
   const [phase, setPhase] = useState<Phase>("showing");
   const [sequence, setSequence] = useState<number[]>([]);
   const [playerInput, setPlayerInput] = useState<number[]>([]);
   const [activeTileId, setActiveTileId] = useState<number | null>(null);
   const [roundResult, setRoundResult] = useState<"correct" | "wrong" | null>(null);
-  const isProcessingRef = useRef(false);
 
-  /** Generate a sequence for the current round */
+  // Refs that always hold the latest values — prevents stale closures in
+  // async showSequence and setTimeout callbacks.
+  const isProcessingRef = useRef(false);
+  const roundRef = useRef(round);
+  const attemptsRef = useRef(attempts);
+
+  useEffect(() => { roundRef.current = round; }, [round]);
+  useEffect(() => { attemptsRef.current = attempts; }, [attempts]);
+
+  /** Generate a sequence for the given round. */
   const generateSequence = useCallback(
     (roundNum: number): number[] => {
       const length =
-        MEMORY_INITIAL_SEQUENCE_LENGTH +
-        (roundNum - 1) * MEMORY_SEQUENCE_INCREMENT;
+        roundNum === MEMORY_TROLL_ROUND
+          ? MEMORY_TROLL_SEQUENCE_LENGTH
+          : MEMORY_INITIAL_SEQUENCE_LENGTH +
+            (roundNum - 1) * MEMORY_SEQUENCE_INCREMENT;
+
       const seq: number[] = [];
       for (let i = 0; i < length; i++) {
-        const randomTile = tiles[Math.floor(Math.random() * tiles.length)];
-        seq.push(randomTile.id);
+        seq.push(tiles[Math.floor(Math.random() * tiles.length)].id);
       }
       return seq;
     },
     [tiles],
   );
 
-  /** Flash the sequence to the player */
+  /** Flash the sequence at the speed appropriate for the round. */
   const showSequence = useCallback(
-    async (seq: number[]) => {
+    async (seq: number[], roundNum: number) => {
       setPhase("showing");
-      await delay(500); // Brief pause before starting
+      await delay(500);
+
+      const flashDuration = getFlashDuration(roundNum);
+      const gapDuration =
+        roundNum === MEMORY_TROLL_ROUND ? MEMORY_TROLL_GAP_MS : 200;
 
       for (const tileId of seq) {
         setActiveTileId(tileId);
-        await delay(MEMORY_FLASH_DURATION_MS);
+        await delay(flashDuration);
         setActiveTileId(null);
-        await delay(200); // Gap between flashes
+        await delay(gapDuration);
       }
 
       setPhase("input");
@@ -79,25 +113,25 @@ export default function MemoryChallenge({
     [],
   );
 
-  /** Start a round */
+  /** Start (or restart) a round. */
   const startRound = useCallback(
     (roundNum: number) => {
       const seq = generateSequence(roundNum);
       setSequence(seq);
       setPlayerInput([]);
       setRoundResult(null);
-      showSequence(seq);
+      showSequence(seq, roundNum);
     },
     [generateSequence, showSequence],
   );
 
-  // Start first round on mount
+  // Mount: start round 1
   useEffect(() => {
     startRound(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** Player taps a tile */
+  /** Player taps a tile. */
   const handleTileTap = useCallback(
     (tileId: number) => {
       if (phase !== "input" || isProcessingRef.current) return;
@@ -105,27 +139,46 @@ export default function MemoryChallenge({
       const newInput = [...playerInput, tileId];
       setPlayerInput(newInput);
 
-      // Flash the tapped tile briefly
+      // Brief visual feedback on the tapped tile
       setActiveTileId(tileId);
       setTimeout(() => setActiveTileId(null), 200);
 
       const inputIndex = newInput.length - 1;
 
-      // Check if this tap matches the sequence
       if (newInput[inputIndex] !== sequence[inputIndex]) {
-        // Wrong!
+        // Wrong tap
         isProcessingRef.current = true;
         setRoundResult("wrong");
-        setPhase("round-result");
 
-        setTimeout(() => {
-          isProcessingRef.current = false;
-          onFail();
-        }, 1500);
+        // Use ref to read current round — avoids stale closure from async
+        // showSequence still running during round transitions.
+        if (roundRef.current === MEMORY_TROLL_ROUND) {
+          // Troll round: always show the reveal message then auto-complete
+          setPhase("troll-fail");
+          setTimeout(() => {
+            isProcessingRef.current = false;
+            setPhase("done");
+            onComplete();
+          }, 4000);
+        } else {
+          setPhase("round-result");
+          const remainingAttempts = attemptsRef.current - 1;
+          setAttempts(remainingAttempts);
+
+          setTimeout(() => {
+            isProcessingRef.current = false;
+            if (remainingAttempts <= 0) {
+              onFail();
+            } else {
+              // Retry the same round with a new random sequence
+              startRound(roundRef.current);
+            }
+          }, 1500);
+        }
         return;
       }
 
-      // Check if sequence is complete
+      // Correct tap — check if the full sequence is done
       if (newInput.length === sequence.length) {
         isProcessingRef.current = true;
         setRoundResult("correct");
@@ -134,38 +187,87 @@ export default function MemoryChallenge({
         setTimeout(() => {
           isProcessingRef.current = false;
 
-          if (round >= MEMORY_ROUNDS) {
-            // All rounds passed!
+          if (roundRef.current >= MEMORY_ROUNDS) {
             setPhase("done");
             onComplete();
           } else {
-            // Next round
-            const nextRound = round + 1;
+            const nextRound = roundRef.current + 1;
             setRound(nextRound);
             startRound(nextRound);
           }
         }, 1500);
       }
     },
-    [phase, playerInput, sequence, round, startRound, onComplete, onFail],
+    [phase, playerInput, sequence, startRound, onComplete, onFail],
   );
+
+  // -------------------------------------------------------------------------
+  // Troll-fail screen — full override, shown for 4 seconds then auto-completes
+  // -------------------------------------------------------------------------
+  if (phase === "troll-fail") {
+    return (
+      <ScreenShell centered>
+        <ScanLines />
+        <div className="w-full max-w-sm flex flex-col items-center gap-6 px-4">
+          <p className="font-condensed text-3xl text-alert uppercase tracking-widest text-center animate-[pulse-alert_500ms_step-end_infinite]">
+            SECUENCIA INCORRECTA
+          </p>
+          <div className="border-2 border-warning p-4 w-full">
+            <p className="font-mono text-sm text-warning text-center leading-relaxed">
+              {UI.memoryTrollMessage}
+            </p>
+          </div>
+          <p className="font-mono text-xs text-text-dim text-center">
+            DESAFÍO COMPLETADO...
+          </p>
+        </div>
+      </ScreenShell>
+    );
+  }
+
+  const isTrollRound = round === MEMORY_TROLL_ROUND;
 
   return (
     <ScreenShell centered>
       <ScanLines />
 
       <div className="w-full max-w-sm">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        {/* Header: title + round counter */}
+        <div className="flex items-center justify-between mb-3">
           <h2 className="font-condensed text-2xl text-warning uppercase tracking-wider">
             {UI.memoryTitle}
           </h2>
           <span className="font-mono text-sm text-text-dim">
-            {UI.memoryRound} {round}/{MEMORY_ROUNDS}
+            {isTrollRound
+              ? UI.memoryTrollRoundLabel
+              : `${UI.memoryRound} ${round}/${MEMORY_ROUNDS}`}
           </span>
         </div>
 
-        {/* Sequence progress */}
+        {/* Attempts indicator */}
+        <div className="flex items-center gap-2 mb-4">
+          <span className="font-mono text-[10px] text-text-dim uppercase">
+            {UI.memoryAttempts}
+          </span>
+          <div className="flex gap-1">
+            {Array.from({ length: MEMORY_MAX_ATTEMPTS }).map((_, i) => {
+              const used = i >= attempts;
+              return (
+                <div
+                  key={i}
+                  className={cn(
+                    "w-3 h-3 border-2",
+                    used
+                      ? "border-bunker-600 bg-transparent"
+                      : "border-terminal bg-terminal",
+                  )}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Sequence progress bar (input phase only) */}
         {phase === "input" && (
           <div className="mb-4">
             <ProgressBar
@@ -180,7 +282,9 @@ export default function MemoryChallenge({
         {/* Phase indicator */}
         {phase === "showing" && (
           <p className="text-warning text-xs font-mono text-center mb-4 animate-[pulse-alert_500ms_step-end_infinite]">
-            OBSERVA LA SECUENCIA...
+            {isTrollRound
+              ? "¡ÚLTIMA RONDA! MÁXIMA CONCENTRACIÓN..."
+              : "OBSERVA LA SECUENCIA..."}
           </p>
         )}
 
@@ -190,7 +294,7 @@ export default function MemoryChallenge({
           </p>
         )}
 
-        {/* Round result */}
+        {/* Round result feedback */}
         {phase === "round-result" && roundResult && (
           <p
             className={cn(
@@ -198,13 +302,11 @@ export default function MemoryChallenge({
               roundResult === "correct" ? "text-terminal" : "text-alert",
             )}
           >
-            {roundResult === "correct"
-              ? "¡CORRECTO!"
-              : "SECUENCIA INCORRECTA"}
+            {roundResult === "correct" ? "¡CORRECTO!" : "SECUENCIA INCORRECTA"}
           </p>
         )}
 
-        {/* Tile grid (3x3) */}
+        {/* Tile grid (3×3) */}
         <div className="grid grid-cols-3 gap-2">
           {tiles.map((tile) => {
             const isActive = activeTileId === tile.id;
@@ -222,15 +324,11 @@ export default function MemoryChallenge({
                   "flex items-center justify-center",
                   "font-mono text-[10px] text-center leading-tight",
                   "transition-all duration-[100ms] ease-linear",
-                  // Default state
                   !isActive && "bg-bunker-800 border-bunker-700 text-text-dim",
-                  // Active (flashing)
                   isActive && "bg-warning border-warning text-bunker-950",
-                  // Interactive
                   isInputPhase &&
                     !isActive &&
                     "cursor-pointer hover:border-bunker-500 active:bg-bunker-700",
-                  // Disabled
                   !isInputPhase && !isActive && "opacity-50",
                 )}
               >
