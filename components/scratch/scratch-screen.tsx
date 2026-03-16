@@ -193,15 +193,18 @@ export default function ScratchScreen({
             </p>
           </div>
         )}
-
-        {/* Back button (always visible) */}
-        <IndustrialButton
-          variant="ghost"
-          compact
-          onClick={onBack}
-        >
-          {UI.codeBackToWall}
-        </IndustrialButton>
+        {/* Back button (shown only when not revealed)*/}
+        {phase !== "revealed" && (
+          <>
+            <IndustrialButton
+              variant="ghost"
+              compact
+              onClick={onBack}
+            >
+              {UI.codeBackToWall}
+            </IndustrialButton>
+          </>
+        )}
       </div>
     </ScreenShell>
   );
