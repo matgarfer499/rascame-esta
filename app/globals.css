@@ -135,3 +135,33 @@ body::before {
   50% { clip-path: inset(5% 10% 5% 10%); opacity: 0.6; }
   100% { clip-path: inset(50%); opacity: 0; }
 }
+
+/* -- Codec intro animations -- */
+@keyframes codec-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes eq-level {
+  0%   { transform: scaleX(0.28); }
+  5%   { transform: scaleX(0.72); }
+  10%  { transform: scaleX(0.45); }
+  15%  { transform: scaleX(0.85); }
+  20%  { transform: scaleX(0.38); }
+  25%  { transform: scaleX(0.65); }
+  30%  { transform: scaleX(0.18); }
+  35%  { transform: scaleX(0.80); }
+  40%  { transform: scaleX(0.52); }
+  45%  { transform: scaleX(0.92); }
+  50%  { transform: scaleX(0.42); }
+  55%  { transform: scaleX(0.68); }
+  60%  { transform: scaleX(0.22); }
+  65%  { transform: scaleX(0.78); }
+  70%  { transform: scaleX(0.55); }
+  75%  { transform: scaleX(0.35); }
+  80%  { transform: scaleX(0.88); }
+  85%  { transform: scaleX(0.48); }
+  90%  { transform: scaleX(0.28); }
+  95%  { transform: scaleX(0.70); }
+  100% { transform: scaleX(0.28); }
+}
