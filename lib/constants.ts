@@ -123,3 +123,22 @@ export const ELIMINATION_STAGGER_MS = 100;
 
 /** Codes confirmed to trigger victory */
 export const VICTORY_THRESHOLD = REAL_CODES_COUNT;
+
+// =============================================================================
+// Codec Intro - MGS-style codec call configuration
+// =============================================================================
+
+/** Classic MGS codec frequency for Snake */
+export const CODEC_FREQUENCY = "140.85";
+
+/** Audio file paths for the codec intro */
+export const CODEC_RING_SRC = "/sounds/codec-sound.mp3";
+export const CODEC_MESSAGE_SRC = "/sounds/intro-message.mp3";
+
+/**
+ * Timestamps (in seconds) for each subtitle line in intro-message.mp3.
+ * Each entry corresponds to the same index in UI.introSubtitles.
+ */
+export const CODEC_SUBTITLE_TIMESTAMPS: readonly number[] = [
+  0.0, 3.2, 5.4, 10.5, 14.0, 17.5, 23.2, 27.5, 31.2, 36.8, 38.8, 43.8, 46.2,
+] as const;

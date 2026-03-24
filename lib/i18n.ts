@@ -18,22 +18,34 @@ export const UI = {
   hudRemaining: "RESTANTES",
 
   // -- Intro screen --
-  introTransmission: "> TRANSMISIÓN ENTRANTE...",
-  introSender: "> REMITENTE:",
-  introRecipients: "> DESTINATARIOS: CRISTÓBAL / MIGUEL",
-  introEndTransmission: "> FIN DE TRANSMISIÓN",
   introStartButton: "INICIAR OPERACIÓN",
 
-  // -- Intro message (PLACEHOLDER - replace with your personal message) --
-  introMessage: [
-    '"Ey, imbéciles. Vuestro regalo',
-    "de cumpleaños está escondido",
-    "en algún sitio de este muro.",
-    "9 códigos PSN de 10€ entre",
-    "100 tarjetas. El resto son",
-    'basura. Buena suerte."',
+  // -- Codec --
+  codecTitle: "CODEC",
+  codecFrequencyLabel: "FREQ",
+  codecIncomingCall: "TRANSMISIÓN ENTRANTE",
+  codecAnswerCall: "RESPONDER",
+  codecEndTransmission: "FIN DE TRANSMISIÓN",
+  codecSpeaker: "SNAKE",
+  codecMemoryLabel: "MEMORY",
+  codecCallIndicator: "CALL",
+
+  // -- Intro subtitles (synced to intro-message.mp3 audio) --
+  introSubtitles: [
+    "Escuchadme bien... Cristóbal... Miguel...",
+    "Aquí Snake. ¿Me recibís?",
+    "Me han informado de que vuestro objetivo de cumpleaños está oculto en este muro.",
+    "Parece una trampa de Foxhound... pero no os confiéis.",
+    "Hay cien expedientes con códigos de PlayStation...",
+    "pero solo nueve de ellos son el paquete real... con un valor de diez euros cada uno.",
+    "El resto... son señuelos... pura basura tecnológica.",
+    "Si queréis vuestra recompensa... tendréis que esforzaros.",
+    "No servirán de nada las nanomáquinas ni esconderse en una caja de cartón esta vez.",
+    "Manteneos a la escucha...",
+    "volveré a ponerme en contacto por esta frecuencia para ayudaros con la misión.",
+    "Buena suerte a los dos...",
+    "Esto no es un entrenamiento. Corto y cierro.",
   ],
-  introSenderName: "TU NOMBRE AQUÍ", // PLACEHOLDER
 
   // -- Wall / Grid --
   wallTitle: "MURO DEL DESTINO",
