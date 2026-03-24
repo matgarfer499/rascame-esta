@@ -74,6 +74,14 @@ export type ChallengeResult = {
   eliminatedCardIds: number[];
 };
 
+/** A timed subtitle cue for codec audio sequences */
+export type SubtitleCue = {
+  /** Audio timestamp in seconds when this cue should appear */
+  time: number;
+  /** Subtitle text to display */
+  text: string;
+};
+
 /** Screen navigation state */
 export type Screen =
   | { type: "intro" }
