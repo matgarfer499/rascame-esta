@@ -78,22 +78,14 @@ export default function CodecShutter({
 
   if (state === "idle") return null;
 
-  const closingAnim = `shutter-close ${CLOSE_MS}ms step-end forwards`;
-  const openingAnim = `shutter-open  ${OPEN_MS}ms  step-end forwards`;
-  const animation   = state === "closing" ? closingAnim : openingAnim;
+  const stateClass = state === "closing" ? "closing" : "opening";
 
   return (
     <>
       {/* Top panel — scales from top edge downward */}
-      <div
-        className="fixed inset-x-0 top-0 h-1/2 bg-black z-50 origin-top"
-        style={{ animation }}
-      />
+      <div className={`codec-shutter-panel codec-shutter-top ${stateClass}`} />
       {/* Bottom panel — scales from bottom edge upward */}
-      <div
-        className="fixed inset-x-0 bottom-0 h-1/2 bg-black z-50 origin-bottom"
-        style={{ animation }}
-      />
+      <div className={`codec-shutter-panel codec-shutter-bottom ${stateClass}`} />
     </>
   );
 }

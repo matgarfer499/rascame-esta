@@ -29,6 +29,8 @@ import IndustrialButton from "./industrial-button";
 type CodecCallProps = {
   /** Audio source for the ringing loop */
   ringSrc: string;
+  /** Audio source for the accepted-call beep (plays during shutter transition) */
+  acceptedSrc: string;
   /** Audio source for the voice message */
   messageSrc: string;
   /** Subtitle cues (time + text) synced to messageSrc */
@@ -59,6 +61,7 @@ function resolveSubtitle(
 
 export default function CodecCall({
   ringSrc,
+  acceptedSrc,
   messageSrc,
   subtitleCues,
   portraitSrc,
@@ -66,8 +69,9 @@ export default function CodecCall({
   actionLabel,
   onAction,
 }: CodecCallProps) {
-  const { phase, currentTime, stopRing, startMessage } = useCodecAudio({
+  const { phase, currentTime, stopRing, playAccepted, connect, startMessage } = useCodecAudio({
     ringSrc,
+    acceptedSrc,
     messageSrc,
   });
 
@@ -82,17 +86,19 @@ export default function CodecCall({
   // ── RESPONDER button handler ─────────────────────────────────────────
   const handleAnswer = () => {
     stopRing();
+    playAccepted();
     setShutterActive(true);
   };
 
-  // ── Shutter midpoint: swap content (ring → message) ─────────────────
+  // ── Shutter midpoint: screen is black — swap CALL → Snake portrait ───
   const handleShutterMidpoint = () => {
-    startMessage();
+    connect();
   };
 
-  // ── Shutter complete: panels are fully open, reset trigger ──────────
+  // ── Shutter complete: panels open, Snake visible — start speaking ────
   const handleShutterComplete = () => {
     setShutterActive(false);
+    startMessage();
   };
 
   return (
@@ -104,7 +110,7 @@ export default function CodecCall({
         onComplete={handleShutterComplete}
       />
 
-      <div className="w-full flex flex-col items-center gap-6">
+      <div className="w-full flex-1 min-h-0 flex flex-col items-center gap-4">
         <CodecFrame
           phase={phase}
           subtitle={subtitle}

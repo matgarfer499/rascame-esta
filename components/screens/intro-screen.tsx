@@ -6,7 +6,7 @@
 // =============================================================================
 
 import { UI } from "@/lib/i18n";
-import { CODEC_RING_SRC, CODEC_MESSAGE_SRC, CODEC_SUBTITLE_TIMESTAMPS } from "@/lib/constants";
+import { CODEC_RING_SRC, CODEC_ACCEPTED_SRC, CODEC_MESSAGE_SRC, CODEC_SUBTITLE_TIMESTAMPS } from "@/lib/constants";
 import type { SubtitleCue } from "@/lib/types";
 import { ScanLines, ScreenShell, CodecCall } from "@/components/ui";
 
@@ -21,10 +21,11 @@ const INTRO_SUBTITLE_CUES: readonly SubtitleCue[] = CODEC_SUBTITLE_TIMESTAMPS.ma
 
 export default function IntroScreen({ onStart }: IntroScreenProps) {
   return (
-    <ScreenShell centered className="bg-black">
+    <ScreenShell className="bg-black h-dvh overflow-hidden flex flex-col items-center">
       <ScanLines />
       <CodecCall
         ringSrc={CODEC_RING_SRC}
+        acceptedSrc={CODEC_ACCEPTED_SRC}
         messageSrc={CODEC_MESSAGE_SRC}
         subtitleCues={INTRO_SUBTITLE_CUES}
         actionLabel={UI.introStartButton}

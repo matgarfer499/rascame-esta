@@ -133,6 +133,7 @@ export const CODEC_FREQUENCY = "140.85";
 
 /** Audio file paths for the codec intro */
 export const CODEC_RING_SRC = "/sounds/codec-sound.mp3";
+export const CODEC_ACCEPTED_SRC = "/sounds/accepted-call-sound.mp3";
 export const CODEC_MESSAGE_SRC = "/sounds/intro-message.mp3";
 
 /**

@@ -125,6 +125,37 @@ body::before {
   100% { transform: scaleY(0); }
 }
 
+/* ── Codec shutter panels ─────────────────────────────────────────────────── */
+.codec-shutter-panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: black;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.codec-shutter-top {
+  top: 0;
+  transform-origin: top;
+  transform: scaleY(0);
+}
+
+.codec-shutter-bottom {
+  bottom: 0;
+  transform-origin: bottom;
+  transform: scaleY(0);
+}
+
+.codec-shutter-panel.closing {
+  animation: shutter-close 380ms ease-in-out forwards;
+}
+
+.codec-shutter-panel.opening {
+  animation: shutter-open 380ms ease-in-out forwards;
+}
+
 @keyframes blink-cursor {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }

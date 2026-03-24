@@ -39,20 +39,21 @@ export default function CodecFrame({
   portraitSrc = "/snake.webp",
   speakerName = UI.codecSpeaker,
 }: CodecFrameProps) {
-  const isRinging = phase === "ringing";
-  const isPlaying = phase === "playing";
-  const isEnded   = phase === "ended";
+  const isRinging   = phase === "ringing";
+  const isConnected = phase === "connected";
+  const isPlaying   = phase === "playing";
+  const isEnded     = phase === "ended";
 
   // Outer border reacts to call state
-  const outerBorder = isPlaying || isRinging
+  const outerBorder = isRinging || isConnected || isPlaying
     ? "border-terminal/70"
     : "border-terminal/20";
 
   return (
-    <div className={cn("w-full max-w-sm border-2 bg-black flex flex-col", outerBorder)}>
+    <div className={cn("w-full max-w-sm border-2 bg-black flex flex-col flex-1 min-h-0", outerBorder)}>
 
       {/* ── TOP: Portrait or CALL indicator ──────────────────────────── */}
-      <div className="relative m-3 mb-0 border-2 border-terminal/60 overflow-hidden aspect-[3/4] bg-black">
+      <div className="relative m-3 mb-0 border-2 border-terminal/60 overflow-hidden flex-1 min-h-0 bg-black">
 
         {isRinging ? (
           /* ── CALL indicator shown while ringing ── */
@@ -89,7 +90,7 @@ export default function CodecFrame({
               alt="Snake"
               fill
               className={cn(
-                "object-cover object-top transition-opacity duration-300",
+                "object-contain object-top transition-opacity duration-300",
                 isEnded ? "opacity-55" : "opacity-100",
               )}
               priority
@@ -178,7 +179,7 @@ export default function CodecFrame({
       </div>
 
       {/* ── BOTTOM: Subtitles ────────────────────────────────────────── */}
-      <div className="border-t border-terminal/20 px-3 py-3 min-h-[5.5rem] flex items-start">
+      <div className="border-t border-terminal/20 px-3 py-3 h-24 overflow-hidden flex items-start">
         {isRinging && (
           <span
             className="text-terminal font-mono text-sm tracking-wider uppercase"
@@ -186,6 +187,10 @@ export default function CodecFrame({
           >
             {UI.codecIncomingCall}
           </span>
+        )}
+
+        {isConnected && (
+          <span className="text-terminal/30 font-mono text-sm">. . .</span>
         )}
 
         {isPlaying && (
