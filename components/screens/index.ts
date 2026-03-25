@@ -9,3 +9,5 @@ export { default as AccessDeniedScreen } from "./access-denied-screen";
 export { default as EliminationScreen } from "./elimination-screen";
 export { default as ShameScreen } from "./shame-screen";
 export { default as ChallengeIntroScreen } from "./challenge-intro-screen";
+export { default as ChallengeCodecScreen } from "./challenge-codec-screen";
+export { default as ChallengeDebriefScreen } from "./challenge-debrief-screen";

@@ -25,7 +25,8 @@ import { VictoryScreen } from "@/components/screens";
 import { AccessDeniedScreen } from "@/components/screens";
 import { EliminationScreen } from "@/components/screens";
 import { ShameScreen } from "@/components/screens";
-import { ChallengeIntroScreen } from "@/components/screens";
+import { ChallengeCodecScreen } from "@/components/screens";
+import { ChallengeDebriefScreen } from "@/components/screens";
 
 // Game components
 import { WallGrid } from "@/components/wall";
@@ -64,7 +65,7 @@ export default function GameOrchestrator({ secret }: GameOrchestratorProps) {
   const [revealedCode, setRevealedCode] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const declinedChallengeRef = useRef<ChallengeId | null>(null);
+
 
   // Elapsed time counter
   useEffect(() => {
@@ -151,9 +152,6 @@ export default function GameOrchestrator({ secret }: GameOrchestratorProps) {
     async (cardId: number) => {
       if (!state.sessionId) return;
 
-      // Clear declined challenge so it re-appears after more scratches
-      declinedChallengeRef.current = null;
-
       const result = await scratchCardAction(state.sessionId, cardId);
       if (result.success && result.data) {
         scratchCard(cardId, result.data.code);
@@ -200,16 +198,6 @@ export default function GameOrchestrator({ secret }: GameOrchestratorProps) {
     setScreen({ type: "wall" });
   }, [setScreen]);
 
-  /** Decline a challenge and return to the wall */
-  const handleDeclineChallenge = useCallback(
-    (challengeId: ChallengeId) => {
-      declinedChallengeRef.current = challengeId;
-      setRevealedCode(null);
-      setScreen({ type: "wall" });
-    },
-    [setScreen],
-  );
-
   /** Get the next available challenge (if any) */
   const getAvailableChallenge = useCallback((): ChallengeId | null => {
     const challengeIds: ChallengeId[] = [1, 2, 3, 4];
@@ -234,7 +222,7 @@ export default function GameOrchestrator({ secret }: GameOrchestratorProps) {
     [setScreen],
   );
 
-  /** Challenge completed — trigger elimination */
+  /** Challenge completed — trigger debrief codec before elimination */
   const handleChallengeComplete = useCallback(
     async (challengeId: ChallengeId) => {
       if (!state.sessionId) return;
@@ -245,15 +233,28 @@ export default function GameOrchestrator({ secret }: GameOrchestratorProps) {
       );
       if (result.success && result.data) {
         completeChallenge(challengeId);
+
+        // All challenges go through debrief codec before elimination
         setScreen({
-          type: "elimination",
+          type: "challenge-debrief",
+          challengeId,
           eliminatedIds: result.data.eliminatedCardIds,
-          nextScreen: { type: "wall" },
         });
       }
     },
     [state.sessionId, completeChallenge, setScreen],
   );
+
+  /** After debrief codec ends — transition to elimination animation */
+  const handleDebriefComplete = useCallback(() => {
+    if (state.screen.type !== "challenge-debrief") return;
+    const { eliminatedIds } = state.screen;
+    setScreen({
+      type: "elimination",
+      eliminatedIds,
+      nextScreen: { type: "wall" },
+    });
+  }, [state.screen, setScreen]);
 
   /** Challenge failed — shame timer */
   const handleChallengeFailed = useCallback(
@@ -285,10 +286,7 @@ export default function GameOrchestrator({ secret }: GameOrchestratorProps) {
   useEffect(() => {
     if (state.screen.type === "wall") {
       const availableChallenge = getAvailableChallenge();
-      if (
-        availableChallenge !== null &&
-        availableChallenge !== declinedChallengeRef.current
-      ) {
+      if (availableChallenge !== null) {
         setScreen({ type: "challenge-intro", challengeId: availableChallenge });
       }
     }
@@ -379,10 +377,17 @@ export default function GameOrchestrator({ secret }: GameOrchestratorProps) {
 
       case "challenge-intro":
         return (
-          <ChallengeIntroScreen
-            challengeId={screen.challengeId}
+          <ChallengeCodecScreen
+            challengeId={screen.challengeId as 1 | 2 | 3 | 4}
             onAccept={() => handleAcceptChallenge(screen.challengeId)}
-            onDecline={() => handleDeclineChallenge(screen.challengeId)}
+          />
+        );
+
+      case "challenge-debrief":
+        return (
+          <ChallengeDebriefScreen
+            challengeId={screen.challengeId as 1 | 2 | 3 | 4}
+            onContinue={handleDebriefComplete}
           />
         );
 

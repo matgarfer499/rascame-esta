@@ -1,26 +1,37 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+// =============================================================================
+// BossChallenge (Liquid Final) - Multi-phase boss fight with HP bar
+// Rotates through 5 action types. Boss has HP that decreases on success
+// and recovers on failure. Visual effects escalate across 3 phases.
+// =============================================================================
+
+import { useState, useCallback, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+import { shuffle } from "@/lib/utils";
 import { UI } from "@/lib/i18n";
 import {
-  BOSS_HOLD_DURATION_SECONDS,
-  BOSS_STABILITY_THRESHOLD,
-  BOSS_DISTRACTION_INTERVAL_MS,
+  BOSS_MAX_HP,
+  BOSS_HP_RECOVERY,
+  BOSS_MAX_FAILURES,
+  BOSS_PHASE_2_THRESHOLD,
+  BOSS_PHASE_3_THRESHOLD,
+  BOSS_ACTION_CONFIGS,
+  BOSS_ACTION_GAP_MS,
+  BOSS_PHASE_TIME_MULTIPLIERS,
 } from "@/lib/constants";
-import { shuffle } from "@/lib/utils";
-import { DISTRACTION_CONTENT } from "@/lib/content";
-import type { DistractionItem } from "@/lib/types";
+import type { BossActionType, BossPhase } from "@/lib/types";
+import { ScreenShell, ScanLines, ProgressBar } from "@/components/ui";
 import {
-  ScreenShell,
-  ScanLines,
-  ProgressBar,
-} from "@/components/ui";
+  DoubleStrikeAction,
+  WarCryAction,
+  HoldPositionAction,
+  QuickComboAction,
+  TacticalSilenceAction,
+} from "./boss";
 
 // =============================================================================
-// BossChallenge (Aguante Dual) - Both twins hold fingers on screen
-// Phone must stay still (accelerometer). Distracting content is shown.
-// Must hold for BOSS_HOLD_DURATION_SECONDS without releasing or moving.
+// Types
 // =============================================================================
 
 type BossChallengeProps = {
@@ -28,273 +39,363 @@ type BossChallengeProps = {
   onFail: () => void;
 };
 
-type Phase = "ready" | "holding" | "success" | "failed";
+type FightState = "prepare" | "action" | "result-success" | "result-fail" | "defeated" | "game-over";
 
-export default function BossChallenge({
-  onComplete,
-  onFail,
-}: BossChallengeProps) {
-  const [phase, setPhase] = useState<Phase>("ready");
-  const [holdProgress, setHoldProgress] = useState(0);
-  const [stability, setStability] = useState(1);
-  const [currentDistraction, setCurrentDistraction] =
-    useState<DistractionItem | null>(null);
-  const [finger1Down, setFinger1Down] = useState(false);
-  const [finger2Down, setFinger2Down] = useState(false);
+// =============================================================================
+// Helpers
+// =============================================================================
 
-  const holdTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const distractionTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const accelListenerRef = useRef<((e: DeviceMotionEvent) => void) | null>(null);
-  const startTimeRef = useRef(0);
+const ALL_ACTIONS: BossActionType[] = [
+  "double-strike",
+  "war-cry",
+  "hold-position",
+  "quick-combo",
+  "tactical-silence",
+];
 
-  const finger1Ref = useRef<HTMLDivElement>(null);
-  const finger2Ref = useRef<HTMLDivElement>(null);
+const ACTION_LABELS: Record<BossActionType, { name: string; hint: string }> = {
+  "double-strike": { name: UI.bossDoubleStrike, hint: UI.bossDoubleStrikeHint },
+  "war-cry": { name: UI.bossWarCry, hint: UI.bossWarCryHint },
+  "hold-position": { name: UI.bossHoldPosition, hint: UI.bossHoldPositionHint },
+  "quick-combo": { name: UI.bossQuickCombo, hint: UI.bossQuickComboHint },
+  "tactical-silence": { name: UI.bossTacticalSilence, hint: UI.bossTacticalSilenceHint },
+};
 
-  const distractions = useRef(shuffle([...DISTRACTION_CONTENT]));
-  const distractionIndexRef = useRef(0);
+/** Build a non-repeating action queue by shuffling, ensuring no adjacent dupes */
+function buildActionQueue(previous?: BossActionType): BossActionType[] {
+  const queue = shuffle([...ALL_ACTIONS]);
+  // Ensure first item differs from the previous action
+  if (previous && queue[0] === previous) {
+    const swapIdx = queue.findIndex((a) => a !== previous);
+    if (swapIdx > 0) [queue[0], queue[swapIdx]] = [queue[swapIdx], queue[0]];
+  }
+  return queue;
+}
 
-  /** Start the hold challenge */
-  const startHold = useCallback(() => {
-    setPhase("holding");
-    startTimeRef.current = Date.now();
+function getPhase(hp: number): BossPhase {
+  if (hp > BOSS_PHASE_2_THRESHOLD) return 1;
+  if (hp > BOSS_PHASE_3_THRESHOLD) return 2;
+  return 3;
+}
 
-    // Hold progress timer
-    holdTimerRef.current = setInterval(() => {
-      const elapsed = (Date.now() - startTimeRef.current) / 1000;
-      const progress = Math.min(elapsed / BOSS_HOLD_DURATION_SECONDS, 1);
-      setHoldProgress(progress);
+function getPhaseLabel(phase: BossPhase): string {
+  if (phase === 1) return UI.bossPhase1;
+  if (phase === 2) return UI.bossPhase2;
+  return UI.bossPhase3;
+}
 
-      if (progress >= 1) {
-        // Success!
-        setPhase("success");
-        cleanup();
-        onComplete();
-      }
-    }, 100);
+/** Get the adjusted duration for an action based on the current phase */
+function getAdjustedDuration(actionType: BossActionType, phase: BossPhase): number {
+  const base = BOSS_ACTION_CONFIGS[actionType].duration;
+  return Math.max(2, Math.round(base * BOSS_PHASE_TIME_MULTIPLIERS[phase - 1]));
+}
 
-    // Distraction rotator
-    distractionTimerRef.current = setInterval(() => {
-      const idx = distractionIndexRef.current % distractions.current.length;
-      setCurrentDistraction(distractions.current[idx]);
-      distractionIndexRef.current++;
-    }, BOSS_DISTRACTION_INTERVAL_MS);
+// =============================================================================
+// Component
+// =============================================================================
 
-    // Show first distraction immediately
-    setCurrentDistraction(distractions.current[0]);
-    distractionIndexRef.current = 1;
+export default function BossChallenge({ onComplete, onFail }: BossChallengeProps) {
+  const [hp, setHp] = useState(BOSS_MAX_HP);
+  const [failures, setFailures] = useState(0);
+  const [fightState, setFightState] = useState<FightState>("prepare");
+  const [currentAction, setCurrentAction] = useState<BossActionType>("double-strike");
+  const [screenShake, setScreenShake] = useState(false);
+  const [glitchIntensity, setGlitchIntensity] = useState(0.04);
 
-    // Accelerometer monitoring (Android — no permission needed)
-    const handleMotion = (event: DeviceMotionEvent) => {
-      const acc = event.accelerationIncludingGravity;
-      if (!acc) return;
+  const actionQueueRef = useRef<BossActionType[]>(buildActionQueue());
+  const queueIndexRef = useRef(0);
+  const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-      // Calculate deviation from resting position
-      const deviation = Math.sqrt(
-        (acc.x ?? 0) ** 2 + (acc.y ?? 0) ** 2 + ((acc.z ?? 0) - 9.8) ** 2,
-      );
+  const phase = getPhase(hp);
 
-      const normalizedStability = Math.max(
-        0,
-        1 - deviation / (BOSS_STABILITY_THRESHOLD * 20),
-      );
-      setStability(normalizedStability);
+  // Update glitch intensity based on phase
+  useEffect(() => {
+    const intensities = [0.04, 0.08, 0.15];
+    setGlitchIntensity(intensities[phase - 1]);
+  }, [phase]);
 
-      if (deviation > BOSS_STABILITY_THRESHOLD * 10) {
-        // Too much movement — fail
-        setPhase("failed");
-        cleanup();
-        onFail();
-      }
+  /** Cleanup transition timer */
+  useEffect(() => {
+    return () => {
+      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
     };
-
-    accelListenerRef.current = handleMotion;
-    window.addEventListener("devicemotion", handleMotion);
-  }, [onComplete, onFail]);
-
-  /** Cleanup all timers and listeners */
-  const cleanup = useCallback(() => {
-    if (holdTimerRef.current) clearInterval(holdTimerRef.current);
-    if (distractionTimerRef.current) clearInterval(distractionTimerRef.current);
-    if (accelListenerRef.current) {
-      window.removeEventListener("devicemotion", accelListenerRef.current);
-    }
   }, []);
 
-  useEffect(() => cleanup, [cleanup]);
+  /** Pick the next action from the queue */
+  const pickNextAction = useCallback(() => {
+    let idx = queueIndexRef.current;
+    let queue = actionQueueRef.current;
 
-  /** Handle touch events for the two finger zones */
-  const handleFingerDown = useCallback(
-    (finger: 1 | 2) => {
-      if (finger === 1) setFinger1Down(true);
-      else setFinger2Down(true);
+    if (idx >= queue.length) {
+      // Rebuild queue, avoiding repeat of last action
+      const lastAction = queue[queue.length - 1];
+      queue = buildActionQueue(lastAction);
+      actionQueueRef.current = queue;
+      idx = 0;
+    }
 
-      // Start if both fingers are down
-      if (phase === "ready") {
-        if ((finger === 1 && finger2Down) || (finger === 2 && finger1Down)) {
-          startHold();
-        }
+    const next = queue[idx];
+    queueIndexRef.current = idx + 1;
+    return next;
+  }, []);
+
+  /** Transition to the next action after a delay */
+  const transitionToNextAction = useCallback(() => {
+    const nextAction = pickNextAction();
+    setCurrentAction(nextAction);
+    setFightState("prepare");
+
+    // Counterattack effects in phases 2-3
+    const currentPhase = getPhase(hp);
+    if (currentPhase >= 2) {
+      setScreenShake(true);
+      // Vibrate on Android
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        navigator.vibrate(currentPhase === 3 ? [100, 50, 100, 50, 200] : [100, 50, 100]);
       }
-    },
-    [phase, finger1Down, finger2Down, startHold],
-  );
+      setTimeout(() => setScreenShake(false), 500);
+    }
 
-  const handleFingerUp = useCallback(
-    (finger: 1 | 2) => {
-      if (finger === 1) setFinger1Down(false);
-      else setFinger2Down(false);
+    transitionTimerRef.current = setTimeout(() => {
+      setFightState("action");
+    }, BOSS_ACTION_GAP_MS);
+  }, [pickNextAction, hp]);
 
-      if (phase === "holding") {
-        // Finger lifted during challenge — fail
-        setPhase("failed");
-        cleanup();
-        onFail();
+  /** Handle action success */
+  const handleActionSuccess = useCallback(() => {
+    const damage = BOSS_ACTION_CONFIGS[currentAction].damage;
+    const newHp = Math.max(0, hp - damage);
+    setHp(newHp);
+
+    if (newHp <= 0) {
+      setFightState("defeated");
+      // Vibrate victory
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        navigator.vibrate([200, 100, 200, 100, 400]);
       }
-    },
-    [phase, cleanup, onFail],
-  );
+      setTimeout(onComplete, 2000);
+    } else {
+      setFightState("result-success");
+      transitionTimerRef.current = setTimeout(transitionToNextAction, 1200);
+    }
+  }, [currentAction, hp, onComplete, transitionToNextAction]);
 
-  const bothFingersDown = finger1Down && finger2Down;
+  /** Handle action failure */
+  const handleActionFail = useCallback(() => {
+    const newFailures = failures + 1;
+    const newHp = Math.min(BOSS_MAX_HP, hp + BOSS_HP_RECOVERY);
+    setFailures(newFailures);
+    setHp(newHp);
 
-  // Attach non-passive touch listeners to allow preventDefault
+    // Vibrate on failure
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      navigator.vibrate([300, 100, 300]);
+    }
+
+    if (newFailures >= BOSS_MAX_FAILURES) {
+      setFightState("game-over");
+      setTimeout(onFail, 2000);
+    } else {
+      setFightState("result-fail");
+      transitionTimerRef.current = setTimeout(transitionToNextAction, 1500);
+    }
+  }, [failures, hp, onFail, transitionToNextAction]);
+
+  // Start the first action on mount
   useEffect(() => {
-    const zone1 = finger1Ref.current;
-    const zone2 = finger2Ref.current;
-    if (!zone1 || !zone2) return;
+    const firstAction = pickNextAction();
+    setCurrentAction(firstAction);
 
-    const onTouchStart1 = (e: TouchEvent) => {
-      e.preventDefault();
-      handleFingerDown(1);
-    };
-    const onTouchEnd1 = (e: TouchEvent) => {
-      e.preventDefault();
-      handleFingerUp(1);
-    };
-    const onTouchStart2 = (e: TouchEvent) => {
-      e.preventDefault();
-      handleFingerDown(2);
-    };
-    const onTouchEnd2 = (e: TouchEvent) => {
-      e.preventDefault();
-      handleFingerUp(2);
-    };
+    transitionTimerRef.current = setTimeout(() => {
+      setFightState("action");
+    }, BOSS_ACTION_GAP_MS);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    const opts: AddEventListenerOptions = { passive: false };
-    zone1.addEventListener("touchstart", onTouchStart1, opts);
-    zone1.addEventListener("touchend", onTouchEnd1, opts);
-    zone2.addEventListener("touchstart", onTouchStart2, opts);
-    zone2.addEventListener("touchend", onTouchEnd2, opts);
+  // ----- Render -----
 
-    return () => {
-      zone1.removeEventListener("touchstart", onTouchStart1);
-      zone1.removeEventListener("touchend", onTouchEnd1);
-      zone2.removeEventListener("touchstart", onTouchStart2);
-      zone2.removeEventListener("touchend", onTouchEnd2);
-    };
-  }, [handleFingerDown, handleFingerUp]);
+  const hpPercent = hp / BOSS_MAX_HP;
+  const actionLabel = ACTION_LABELS[currentAction];
 
   return (
     <ScreenShell>
-      <ScanLines />
+      <ScanLines opacity={glitchIntensity} />
 
-      <div className="flex flex-col h-dvh">
-        {/* Header */}
-        <div className="pt-4 px-4">
-          <h2 className="font-condensed text-2xl text-alert uppercase tracking-wider mb-2">
-            {UI.bossTitle}
-          </h2>
+      <div
+        className={cn(
+          "flex flex-col h-dvh",
+          screenShake && "animate-[screen-shake_300ms_step-end]",
+        )}
+      >
+        {/* ---- Header: HP bar + phase + failures ---- */}
+        <div className="pt-4 px-4 space-y-2">
+          {/* Boss name + HP */}
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="font-condensed text-2xl text-alert uppercase tracking-wider">
+              {UI.bossTitle}
+            </h2>
+            <span className="font-mono text-[10px] text-text-dead">
+              {UI.bossFailures}: {failures}/{BOSS_MAX_FAILURES}
+            </span>
+          </div>
 
-          {/* Progress bar */}
-          {phase === "holding" && (
-            <ProgressBar
-              value={holdProgress}
-              variant="terminal"
-              showLabel
-              height="h-4"
-            />
-          )}
-
-          {/* Stability meter */}
-          {phase === "holding" && (
-            <div className="mt-2">
-              <div className="flex justify-between text-[10px] font-mono mb-1">
-                <span className="text-text-dead">{UI.bossStability}</span>
-                <span
-                  className={cn(
-                    stability > 0.5 ? "text-terminal" : "text-alert",
-                  )}
-                >
-                  {Math.round(stability * 100)}%
-                </span>
-              </div>
-              <ProgressBar
-                value={stability}
-                variant={stability > 0.5 ? "terminal" : "alert"}
-                height="h-2"
-              />
+          {/* HP Bar */}
+          <div>
+            <div className="flex justify-between text-[10px] font-mono mb-1">
+              <span className="text-text-dead">{UI.bossHpLabel}</span>
+              <span className={cn(
+                hpPercent > 0.5 ? "text-alert" : hpPercent > 0.2 ? "text-warning" : "text-terminal",
+              )}>
+                {Math.round(hpPercent * 100)}%
+              </span>
             </div>
-          )}
+            <ProgressBar
+              value={hpPercent}
+              variant={hpPercent > 0.5 ? "alert" : hpPercent > 0.2 ? "warning" : "terminal"}
+              height="h-5"
+              showLabel
+            />
+          </div>
+
+          {/* Phase indicator */}
+          <p className={cn(
+            "font-mono text-[10px] uppercase tracking-widest text-center",
+            phase === 1 && "text-text-dead",
+            phase === 2 && "text-warning",
+            phase === 3 && "text-alert animate-[pulse-alert_500ms_step-end_infinite]",
+          )}>
+            {getPhaseLabel(phase)}
+          </p>
         </div>
 
-        {/* Distraction zone (center) */}
-        <div className="flex-1 flex items-center justify-center px-4">
-          {phase === "ready" && (
-            <p className="font-condensed text-xl text-text-dim text-center uppercase">
-              {UI.bossDontMove}
-            </p>
-          )}
-
-          {phase === "holding" && currentDistraction && (
-            <div className="text-center animate-[stamp-in_200ms_step-end_forwards]">
-              <p className="font-mono text-lg text-warning leading-relaxed">
-                {currentDistraction.content}
+        {/* ---- Central area: action name + action component ---- */}
+        <div className="flex-1 flex flex-col px-4 py-3 overflow-hidden">
+          {/* Prepare state: show action name */}
+          {fightState === "prepare" && (
+            <div className="flex-1 flex flex-col items-center justify-center gap-4">
+              <p className="font-mono text-xs text-text-dead uppercase tracking-widest">
+                {UI.bossPrepare}
+              </p>
+              <h3 className="font-condensed text-3xl text-warning uppercase tracking-wider text-center">
+                {actionLabel.name}
+              </h3>
+              <p className="font-mono text-xs text-text-dim text-center">
+                {actionLabel.hint}
               </p>
             </div>
           )}
-        </div>
 
-        {/* Two finger zones (bottom half) */}
-        <div className="flex gap-2 px-4 pb-4 h-[35vh]">
-          {/* Finger 1 zone */}
-          <div
-            ref={finger1Ref}
-            className={cn(
-              "flex-1 flex items-center justify-center",
-              "border-2 rounded-[1px]",
-              "font-condensed text-lg uppercase",
-              "select-none touch-none",
-              finger1Down
-                ? "bg-terminal/20 border-terminal text-terminal"
-                : "bg-bunker-800 border-bunker-700 text-text-dead",
-            )}
-            onMouseDown={() => handleFingerDown(1)}
-            onMouseUp={() => handleFingerUp(1)}
-          >
-            <div className="text-center">
-              <p>{UI.bossFingerHere}</p>
-              <p className="text-xs mt-1">{UI.twin1}</p>
-            </div>
-          </div>
+          {/* Active action */}
+          {fightState === "action" && (
+            <div className="flex-1 flex flex-col">
+              {/* Action name */}
+              <div className="text-center mb-3">
+                <h3 className="font-condensed text-xl text-warning uppercase tracking-wider">
+                  {actionLabel.name}
+                </h3>
+              </div>
 
-          {/* Finger 2 zone */}
-          <div
-            ref={finger2Ref}
-            className={cn(
-              "flex-1 flex items-center justify-center",
-              "border-2 rounded-[1px]",
-              "font-condensed text-lg uppercase",
-              "select-none touch-none",
-              finger2Down
-                ? "bg-terminal/20 border-terminal text-terminal"
-                : "bg-bunker-800 border-bunker-700 text-text-dead",
-            )}
-            onMouseDown={() => handleFingerDown(2)}
-            onMouseUp={() => handleFingerUp(2)}
-          >
-            <div className="text-center">
-              <p>{UI.bossFingerHere}</p>
-              <p className="text-xs mt-1">{UI.twin2}</p>
+              {/* Action component */}
+              <div className="flex-1">
+                {currentAction === "double-strike" && (
+                  <DoubleStrikeAction
+                    key={`ds-${queueIndexRef.current}`}
+                    duration={getAdjustedDuration("double-strike", phase)}
+                    onSuccess={handleActionSuccess}
+                    onFailure={handleActionFail}
+                  />
+                )}
+                {currentAction === "war-cry" && (
+                  <WarCryAction
+                    key={`wc-${queueIndexRef.current}`}
+                    duration={getAdjustedDuration("war-cry", phase)}
+                    onSuccess={handleActionSuccess}
+                    onFailure={handleActionFail}
+                  />
+                )}
+                {currentAction === "hold-position" && (
+                  <HoldPositionAction
+                    key={`hp-${queueIndexRef.current}`}
+                    duration={getAdjustedDuration("hold-position", phase)}
+                    onSuccess={handleActionSuccess}
+                    onFailure={handleActionFail}
+                  />
+                )}
+                {currentAction === "quick-combo" && (
+                  <QuickComboAction
+                    key={`qc-${queueIndexRef.current}`}
+                    duration={getAdjustedDuration("quick-combo", phase)}
+                    onSuccess={handleActionSuccess}
+                    onFailure={handleActionFail}
+                  />
+                )}
+                {currentAction === "tactical-silence" && (
+                  <TacticalSilenceAction
+                    key={`ts-${queueIndexRef.current}`}
+                    duration={getAdjustedDuration("tactical-silence", phase)}
+                    onSuccess={handleActionSuccess}
+                    onFailure={handleActionFail}
+                  />
+                )}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Result: success */}
+          {fightState === "result-success" && (
+            <div className="flex-1 flex flex-col items-center justify-center gap-3">
+              <div className="border-2 border-terminal p-4">
+                <p className="font-condensed text-2xl text-terminal uppercase">
+                  {UI.bossDamageDealt}
+                </p>
+              </div>
+              <p className="font-mono text-xs text-terminal">
+                -{BOSS_ACTION_CONFIGS[currentAction].damage} HP
+              </p>
+            </div>
+          )}
+
+          {/* Result: failure */}
+          {fightState === "result-fail" && (
+            <div className="flex-1 flex flex-col items-center justify-center gap-3">
+              <div className="border-2 border-alert p-4">
+                <p className="font-condensed text-2xl text-alert uppercase animate-[pulse-alert_300ms_step-end_infinite]">
+                  {UI.bossActionFailed}
+                </p>
+              </div>
+              <p className="font-mono text-xs text-warning">
+                {UI.bossRecovering} +{BOSS_HP_RECOVERY} HP
+              </p>
+            </div>
+          )}
+
+          {/* Defeated */}
+          {fightState === "defeated" && (
+            <div className="flex-1 flex flex-col items-center justify-center gap-4">
+              <div className="border-2 border-terminal p-6">
+                <p className="font-condensed text-3xl text-terminal uppercase">
+                  {UI.bossDefeated}
+                </p>
+              </div>
+              <p className="font-mono text-xs text-text-dim">
+                {UI.challengeComplete}
+              </p>
+            </div>
+          )}
+
+          {/* Game over */}
+          {fightState === "game-over" && (
+            <div className="flex-1 flex flex-col items-center justify-center gap-4">
+              <div className="border-2 border-alert p-6">
+                <p className="font-condensed text-3xl text-alert uppercase animate-[pulse-alert_500ms_step-end_infinite]">
+                  {UI.challengeFailed}
+                </p>
+              </div>
+              <p className="font-mono text-xs text-text-dead">
+                {failures}/{BOSS_MAX_FAILURES} {UI.bossFailures.toLowerCase()}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </ScreenShell>
