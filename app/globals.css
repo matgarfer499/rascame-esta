@@ -196,3 +196,14 @@ body::before {
   95%  { transform: scaleX(0.70); }
   100% { transform: scaleX(0.28); }
 }
+
+/* -- Boss fight screen shake (mechanical, hard steps) -- */
+@keyframes screen-shake {
+  0%   { transform: translate(0, 0); }
+  15%  { transform: translate(-4px, 2px); }
+  30%  { transform: translate(3px, -3px); }
+  45%  { transform: translate(-2px, 4px); }
+  60%  { transform: translate(4px, -1px); }
+  75%  { transform: translate(-3px, -2px); }
+  100% { transform: translate(0, 0); }
+}
