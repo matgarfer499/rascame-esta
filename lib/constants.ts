@@ -141,5 +141,5 @@ export const CODEC_MESSAGE_SRC = "/sounds/intro-message.mp3";
  * Each entry corresponds to the same index in UI.introSubtitles.
  */
 export const CODEC_SUBTITLE_TIMESTAMPS: readonly number[] = [
-  0.0, 3.2, 5.4, 10.5, 14.0, 17.5, 23.2, 27.5, 31.2, 36.8, 38.8, 43.8, 46.2,
+  0.0, 3.7, 6.6, 10.6, 13.7, 16.4, 24.8, 29.3, 33.3, 37.3, 38.9, 43.3, 44.6, 46.2, 47.4
 ] as const;

@@ -39,22 +39,26 @@ export default function CodecFrame({
   portraitSrc = "/snake.webp",
   speakerName = UI.codecSpeaker,
 }: CodecFrameProps) {
-  const isRinging   = phase === "ringing";
+  const isRinging = phase === "ringing";
   const isConnected = phase === "connected";
-  const isPlaying   = phase === "playing";
-  const isEnded     = phase === "ended";
+  const isPlaying = phase === "playing";
+  const isEnded = phase === "ended";
 
   // Outer border reacts to call state
-  const outerBorder = isRinging || isConnected || isPlaying
-    ? "border-terminal/70"
-    : "border-terminal/20";
+  const outerBorder =
+    isRinging || isConnected || isPlaying
+      ? "border-terminal/70"
+      : "border-terminal/20";
 
   return (
-    <div className={cn("w-full max-w-sm border-2 bg-black flex flex-col flex-1 min-h-0", outerBorder)}>
-
+    <div
+      className={cn(
+        "w-full max-w-sm border-2 bg-black flex flex-col flex-1 min-h-0",
+        outerBorder,
+      )}
+    >
       {/* ── TOP: Portrait or CALL indicator ──────────────────────────── */}
       <div className="relative m-3 mb-0 border-2 border-terminal/60 overflow-hidden flex-1 min-h-0 bg-black">
-
         {isRinging ? (
           /* ── CALL indicator shown while ringing ── */
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
@@ -77,7 +81,9 @@ export default function CodecFrame({
                 <span
                   key={delay}
                   className="w-2 h-2 bg-terminal"
-                  style={{ animation: `codec-pulse 900ms step-end ${delay}ms infinite` }}
+                  style={{
+                    animation: `codec-pulse 900ms step-end ${delay}ms infinite`,
+                  }}
                 />
               ))}
             </div>
@@ -110,9 +116,11 @@ export default function CodecFrame({
 
       {/* ── MIDDLE: Speaker name + horizontal VU meter ───────────────── */}
       <div className="px-3 pt-3 pb-1 flex items-center gap-3">
-        <span className="font-condensed text-base text-terminal tracking-widest w-12 shrink-0">
-          {speakerName}
-        </span>
+        {!isRinging && (
+          <span className="font-condensed text-base text-terminal tracking-widest w-12 shrink-0">
+            {speakerName}
+          </span>
+        )}
 
         {/* VU meter container */}
         <div className="flex-1 h-[18px] bg-terminal/10 overflow-hidden relative border border-terminal/20">
@@ -180,15 +188,6 @@ export default function CodecFrame({
 
       {/* ── BOTTOM: Subtitles ────────────────────────────────────────── */}
       <div className="border-t border-terminal/20 px-3 py-3 h-24 overflow-hidden flex items-start">
-        {isRinging && (
-          <span
-            className="text-terminal font-mono text-sm tracking-wider uppercase"
-            style={{ animation: "codec-pulse 900ms step-end infinite" }}
-          >
-            {UI.codecIncomingCall}
-          </span>
-        )}
-
         {isConnected && (
           <span className="text-terminal/30 font-mono text-sm">. . .</span>
         )}
@@ -198,10 +197,11 @@ export default function CodecFrame({
             key={subtitle}
             className="font-mono text-sm text-text-primary leading-relaxed"
           >
-            {subtitle
-              ? <>&ldquo;{subtitle}&rdquo;</>
-              : <span className="text-terminal/30">. . .</span>
-            }
+            {subtitle ? (
+              <>&ldquo;{subtitle}&rdquo;</>
+            ) : (
+              <span className="text-terminal/30">. . .</span>
+            )}
           </p>
         )}
 
@@ -211,7 +211,6 @@ export default function CodecFrame({
           </span>
         )}
       </div>
-
     </div>
   );
 }

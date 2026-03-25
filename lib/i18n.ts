@@ -44,7 +44,8 @@ export const UI = {
     "Manteneos a la escucha...",
     "volveré a ponerme en contacto por esta frecuencia para ayudaros con la misión.",
     "Buena suerte a los dos...",
-    "Esto no es un entrenamiento. Corto y cierro.",
+    "Esto no es un entrenamiento.",
+    "Corto y cierro.",
   ],
 
   // -- Wall / Grid --
