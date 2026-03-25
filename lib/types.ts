@@ -91,6 +91,7 @@ export type Screen =
   | { type: "confirm"; cardId: number; code: string }
   | { type: "challenge-intro"; challengeId: ChallengeId }
   | { type: "challenge"; challengeId: ChallengeId }
+  | { type: "challenge-debrief"; challengeId: ChallengeId; eliminatedIds: number[] }
   | { type: "shame-timer"; seconds: number; nextScreen: Screen }
   | { type: "elimination"; eliminatedIds: number[]; nextScreen: Screen }
   | { type: "victory" };
@@ -116,6 +117,24 @@ export type DistractionItem = {
   type: "text" | "image";
   content: string;
 };
+
+/** Boss fight action types */
+export type BossActionType =
+  | "double-strike"
+  | "war-cry"
+  | "hold-position"
+  | "quick-combo"
+  | "tactical-silence";
+
+/** Configuration for a single boss action */
+export type BossActionConfig = {
+  type: BossActionType;
+  damage: number;
+  duration: number;
+};
+
+/** Boss fight phase (escalates as HP drops) */
+export type BossPhase = 1 | 2 | 3;
 
 /** Game reducer action types */
 export type GameAction =

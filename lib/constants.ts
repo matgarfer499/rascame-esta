@@ -101,10 +101,30 @@ export const MEMORY_TROLL_FLASH_DURATION_MS = 40;
 /** Gap between flashes in the troll round (ms) */
 export const MEMORY_TROLL_GAP_MS = 20;
 
-/** Boss challenge settings */
-export const BOSS_HOLD_DURATION_SECONDS = 15;
-export const BOSS_STABILITY_THRESHOLD = 0.5; // Accelerometer threshold
+/** Boss fight settings */
+export const BOSS_MAX_HP = 100;
+export const BOSS_HP_RECOVERY = 10;
+export const BOSS_MAX_FAILURES = 5;
+/** HP thresholds where the boss transitions to phase 2 and phase 3 */
+export const BOSS_PHASE_2_THRESHOLD = 70;
+export const BOSS_PHASE_3_THRESHOLD = 30;
+export const BOSS_STABILITY_THRESHOLD = 0.5;
+export const BOSS_VOLUME_THRESHOLD = 0.25;
+export const BOSS_SILENCE_THRESHOLD = 0.08;
 export const BOSS_DISTRACTION_INTERVAL_MS = 3000;
+/** Delay between actions (ms) — the "prepare" pause */
+export const BOSS_ACTION_GAP_MS = 2000;
+/** Time multiplier per phase (1 = normal, < 1 = faster) */
+export const BOSS_PHASE_TIME_MULTIPLIERS = [1, 0.8, 0.6] as const;
+
+/** Per-action damage and base duration (seconds) */
+export const BOSS_ACTION_CONFIGS = {
+  "double-strike": { damage: 15, duration: 3 },
+  "war-cry": { damage: 20, duration: 4 },
+  "hold-position": { damage: 15, duration: 6 },
+  "quick-combo": { damage: 20, duration: 8 },
+  "tactical-silence": { damage: 15, duration: 5 },
+} as const;
 
 /** PSN code format: XXXX-XXXX-XXXX (alphanumeric, 3 blocks of 4) */
 export const PSN_CODE_BLOCK_LENGTH = 4;
@@ -136,10 +156,86 @@ export const CODEC_RING_SRC = "/sounds/codec-sound.mp3";
 export const CODEC_ACCEPTED_SRC = "/sounds/accepted-call-sound.mp3";
 export const CODEC_MESSAGE_SRC = "/sounds/intro-message.mp3";
 
+/** Audio file paths for challenge codec calls (intro briefings) */
+export const CHALLENGE_1_MESSAGE_SRC = "/sounds/first-challenge.mp3";
+export const CHALLENGE_2_MESSAGE_SRC = "/sounds/second-challenge.mp3";
+export const CHALLENGE_3_MESSAGE_SRC = "/sounds/third-challenge.mp3";
+export const CHALLENGE_4_MESSAGE_SRC = "/sounds/fourth-challenge.mp3";
+
+/** Audio file paths for per-challenge debrief codec calls */
+export const CHALLENGE_1_DEBRIEF_SRC = "/sounds/first-challenge-succeded.mp3";
+export const CHALLENGE_2_DEBRIEF_SRC = "/sounds/second-challenge-succeded.mp3";
+export const CHALLENGE_3_DEBRIEF_SRC = "/sounds/third-challenge-succeded.mp3";
+export const CHALLENGE_4_DEBRIEF_SRC = "/sounds/fourth-challenge-succeed.mp3";
+
 /**
  * Timestamps (in seconds) for each subtitle line in intro-message.mp3.
  * Each entry corresponds to the same index in UI.introSubtitles.
  */
 export const CODEC_SUBTITLE_TIMESTAMPS: readonly number[] = [
   0.0, 3.7, 6.6, 10.6, 13.7, 16.4, 24.8, 29.3, 33.3, 37.3, 38.9, 43.3, 44.6, 46.2, 47.4
+] as const;
+
+/**
+ * Timestamps (in seconds) for challenge 1 subtitle lines in first-challenge.mp3.
+ * PLACEHOLDER — replace with real timestamps after listening to the audio.
+ */
+export const CHALLENGE_1_SUBTITLE_TIMESTAMPS: readonly number[] = [
+  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+] as const;
+
+/**
+ * Timestamps (in seconds) for challenge 2 subtitle lines in second-challenge.mp3.
+ * PLACEHOLDER — replace with real timestamps after listening to the audio.
+ */
+export const CHALLENGE_2_SUBTITLE_TIMESTAMPS: readonly number[] = [
+  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+] as const;
+
+/**
+ * Timestamps (in seconds) for challenge 3 subtitle lines in third-challenge.mp3.
+ * PLACEHOLDER — replace with real timestamps after listening to the audio.
+ */
+export const CHALLENGE_3_SUBTITLE_TIMESTAMPS: readonly number[] = [
+  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+] as const;
+
+/**
+ * Timestamps (in seconds) for challenge 4 subtitle lines in fourth-challenge.mp3.
+ * PLACEHOLDER — replace with real timestamps after listening to the audio.
+ */
+export const CHALLENGE_4_SUBTITLE_TIMESTAMPS: readonly number[] = [
+  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+] as const;
+
+/**
+ * Timestamps for the challenge 1 debrief codec (first-challenge-succeded.mp3).
+ * PLACEHOLDER — replace with real timestamps after listening to the audio.
+ */
+export const CHALLENGE_1_DEBRIEF_SUBTITLE_TIMESTAMPS: readonly number[] = [
+  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+] as const;
+
+/**
+ * Timestamps for the challenge 2 debrief codec (second-challenge-succeded.mp3).
+ * PLACEHOLDER — replace with real timestamps after listening to the audio.
+ */
+export const CHALLENGE_2_DEBRIEF_SUBTITLE_TIMESTAMPS: readonly number[] = [
+  0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+] as const;
+
+/**
+ * Timestamps for the challenge 3 debrief codec (third-challenge-succeded.mp3).
+ * PLACEHOLDER — replace with real timestamps after listening to the audio.
+ */
+export const CHALLENGE_3_DEBRIEF_SUBTITLE_TIMESTAMPS: readonly number[] = [
+  0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+] as const;
+
+/**
+ * Timestamps for the challenge 4 debrief codec (fourth-challenge-succeed.mp3).
+ * PLACEHOLDER — replace with real timestamps after listening to the audio.
+ */
+export const CHALLENGE_4_DEBRIEF_SUBTITLE_TIMESTAMPS: readonly number[] = [
+  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 ] as const;

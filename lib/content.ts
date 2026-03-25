@@ -86,8 +86,9 @@ export const MEMORY_TILES: MemoryTile[] = [
 ];
 
 /**
- * Distracting content for the Boss (Dual Hold) challenge.
- * Shown while twins must hold still. Designed to make them laugh and fail.
+ * Distracting content for the Boss (Liquid Final) challenge.
+ * Shown during tactical silence phases to make twins laugh and fail.
+ * PLACEHOLDER — replace with real inside jokes about the twins.
  */
 export const DISTRACTION_CONTENT: DistractionItem[] = [
   { type: "text", content: "PLACEHOLDER: Frase graciosa #1" },
@@ -95,4 +96,7 @@ export const DISTRACTION_CONTENT: DistractionItem[] = [
   { type: "text", content: "PLACEHOLDER: Frase graciosa #3" },
   { type: "text", content: "PLACEHOLDER: Frase graciosa #4" },
   { type: "text", content: "PLACEHOLDER: Frase graciosa #5" },
+  { type: "text", content: "PLACEHOLDER: Frase graciosa #6" },
+  { type: "text", content: "PLACEHOLDER: Frase graciosa #7" },
+  { type: "text", content: "PLACEHOLDER: Frase graciosa #8" },
 ];

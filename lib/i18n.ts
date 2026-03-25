@@ -48,6 +48,103 @@ export const UI = {
     "Corto y cierro.",
   ],
 
+  // -- Challenge 1 subtitles (synced to first-challenge.mp3 audio) --
+  challenge1Subtitles: [
+    "¿Pero qué...? La frecuencia está sufriendo interferencias...",
+    "Cristóbal... Miguel... ¿Me recibís? Aquí Snake.",
+    "He logrado infiltrarme en el sistema del muro... pero algo va mal.",
+    "Los sensores indican que vuestro objetivo de cumpleaños ha sido fragmentado en cien expedientes de Play-Stéishon...",
+    "y solo nueve de ellos son el paquete real... con un valor de diez euros cada uno.",
+    "El resto... es solo ruido... pura basura tecnológica para despistar a los intrusos.",
+    "Escuchadme bien... vuestras nanomáquinas están registrando niveles de estrés EL-E-VA-DOS...",
+    "pero no podéis rendiros ahora.",
+    "Si queréis esos códigos... tendréis que demostrar que sois dignos de este legado.",
+    "Manteneos alerta... volveré a contactar por esta frecuencia cuando localice el primer punto de inserción.",
+    "Esto no es un entrenamiento...",
+    "Corto y cierro.",
+  ],
+
+  // -- Challenge 2 subtitles (synced to second-challenge.mp3 audio) --
+  challenge2Subtitles: [
+    "¡Cristóbal! ¡Miguel! ¡Mantened la calma!",
+    "Parece que habéis caído en una emboscada de Revolver Ocelot.",
+    "El sistema ha bloqueado los siguientes expedientes con un sensor de frecuencia de voz...",
+    "y la única forma de romperlo es gritando.",
+    "Escuchadme bien... Ocelot quiere ver si tenéis la resistencia necesaria para ser soldados de élite.",
+    "Tenéis que pronunciar esas frases con la R... y tenéis que hacerlo lo más fuerte posible.",
+    "¡Que se enteren en toda la base!",
+    "Si no gritáis con fuerza... el interrogatorio no terminará nunca y los códigos de PlayStation se perderán para siempre.",
+    "No hay opción de rendirse... En esta misión no existe el botón de 'Continuar'.",
+    "¡Cumplid con vuestro deber! Corto y cierro.",
+  ],
+
+  // -- Challenge 3 subtitles (synced to third-challenge.mp3 audio) --
+  challenge3Subtitles: [
+    "¡Cristóbal! ¡Miguel! ¡Deteneos justo donde estáis!",
+    "Habéis entrado en un sector minado... y el radar Soliton está sufriendo interferencias.",
+    "Para limpiar este muro de expedientes falsos, vais a tener que memorizar el patrón de desactivación... paso a paso.",
+    "Es como seguir a Meryl a través del campo de nieve...",
+    "Un solo error en la secuencia y todo saltará por los aires.",
+    "Tenéis tres intentos... tres oportunidades para demostrar que vuestra memoria es más rápida que los sensores térmicos de Foxhound.",
+    "Si falláis las tres veces... la misión se abortará y perderéis el rastro de esos códigos de PlayStation para siempre.",
+    "Concentraos... visualizad el patrón y repetidlo sin dudar.",
+    "No dejéis que la presión os supere.",
+    "Cambio y corto.",
+  ],
+
+  // -- Challenge debrief subtitles (per-challenge, synced to individual debrief audios) --
+
+  challenge1DebriefSubtitles: [
+    "Buen trabajo...",
+    "La presencia de Mantis se desvanece.",
+    "Habéis demostrado que vuestros vínculos son reales y el escaneo de memoria ha confirmado vuestra identidad.",
+    "El muro de expedientes falsos está empezando a caer...",
+    "pero no os relajéis. Esto acaba de empezar.",
+    "Manteneos alerta para el siguiente punto de inserción.",
+    "Corto y cierro.",
+  ],
+
+  challenge2DebriefSubtitles: [
+    "¡Increíble!",
+    "Ocelot no ha podido doblegar vuestra voluntad.",
+    "Esos gritos han roto la frecuencia de seguridad y los expedientes falsos están siendo eliminados del sistema.",
+    "Habéis demostrado tener los pulmones y la determinación de un soldado de élite.",
+    "Tomaos un respiro... pero solo un segundo.",
+    "La misión continúa. Cambio y corto.",
+  ],
+
+  challenge3DebriefSubtitles: [
+    "Habéis cruzado el campo de minas sin un solo rasguño.",
+    "Vuestra capacidad de observación y memoria es digna de la unidad Foxhound.",
+    "Los datos se están filtrando correctamente y ya estamos más cerca de esos códigos de PlayStation.",
+    "Habéis salvado a vuestro equipo de una explosión segura...",
+    "pero la fase final está cerca.",
+    "No bajéis la guardia. Corto y cierro.",
+  ],
+
+  challenge4DebriefSubtitles: [
+    "Se acabó... Líquid ha caído.",
+    "El sistema está limpio y el muro de expedientes falsos ha sido neutralizado.",
+    "Buen trabajo, soldados... vuestra coordinación ha sido impecable.",
+    "Los nueve expedientes reales están desbloqueados.",
+    "Ya podéis reclamar vuestra recompensa de noventa euros.",
+    "No ha sido fácil, pero habéis demostrado de qué pasta estáis hechos.",
+    "Disfrutad de vuestro botín... os lo habéis ganado.",
+  ],
+
+  // -- Challenge 4 intro subtitles (synced to fourth-challenge.mp3 audio) --
+  challenge4Subtitles: [
+    "Cristóbal... Miguel... Atendedme bien. No hay vuelta atrás.",
+    "Líquid ha tomado el control del sistema central y está bloqueando los últimos expedientes.",
+    "Para liberar esos códigos de diez euros... vais a tener que luchar como uno solo.",
+    "Escuchadme... Líquid no es un enemigo común.",
+    "Va a usar distracciones... va a intentar sabotear vuestros terminales y recuperará fuerzas si dudáis.",
+    "Olvidaos de las nanomáquinas... aquí solo importa vuestra coordinación.",
+    "Es el momento de demostrar que vuestros genes son superiores.",
+    "Atacad ahora. No le deis ni un segundo de respiro.",
+    "¡Acabad con esto de una vez!",
+  ],
+
   // -- Wall / Grid --
   wallTitle: "MURO DEL DESTINO",
   cardLabel: "Nº",
@@ -75,6 +172,7 @@ export const UI = {
   challengeOf: "DE",
   challengeAccept: "ACEPTAR DESAFÍO",
   challengeBackCoward: "Volver al muro (cobarde)",
+  challengeDebriefAction: "ELIMINAR EXPEDIENTES",
   challengeEliminate: "se eliminarán",
   challengeFakeCards: "tarjetas falsas del muro",
   challengeFailWarning: "Si falláis... tendréis que esperar",
@@ -92,9 +190,9 @@ export const UI = {
   "challenge.memory.name": "MEMORIA GEMELA",
   "challenge.memory.description":
     "Recordad la secuencia correcta. Vuestra memoria compartida será puesta a prueba.",
-  "challenge.boss.name": "AGUANTE DUAL",
+  "challenge.boss.name": "LIQUID FINAL",
   "challenge.boss.description":
-    "El jefe final. Dos dedos, cero movimiento, máxima concentración. No. Os. Mováis.",
+    "El jefe final. Liquid ha tomado el control del sistema. Golpead, gritad, resistid y guardad silencio... todo a la vez. No hay rendición posible.",
 
   // -- Trivia specific --
   triviaTitle: "TRIVIA GEMELA",
@@ -116,10 +214,34 @@ export const UI = {
   memoryAttempts: "INTENTOS",
 
   // -- Boss specific --
-  bossTitle: "AGUANTE DUAL",
+  bossTitle: "LIQUID FINAL",
+  bossHpLabel: "LIQUID",
+  bossPhase1: "FASE 1 — TANTEO",
+  bossPhase2: "FASE 2 — SE ENFADA",
+  bossPhase3: "FASE 3 — DESESPERACIÓN",
+  bossFailures: "FALLOS",
   bossFingerHere: "DEDO AQUÍ",
   bossStability: "ESTABILIDAD",
-  bossDontMove: "NO. OS. MOVÁIS.",
+
+  // Boss action names
+  bossDoubleStrike: "¡GOLPE DOBLE!",
+  bossDoubleStrikeHint: "¡AMBOS! Tocad vuestra zona ¡YA!",
+  bossWarCry: "¡GRITO DE GUERRA!",
+  bossWarCryHint: "¡GRITAD CON TODA VUESTRA ALMA!",
+  bossHoldPosition: "¡POSICIÓN FIRME!",
+  bossHoldPositionHint: "Dedos en las zonas. No. Os. Mováis.",
+  bossQuickCombo: "¡COMBO RÁPIDO!",
+  bossQuickComboHint: "¡Tocad las dianas en orden!",
+  bossTacticalSilence: "¡SILENCIO TÁCTICO!",
+  bossTacticalSilenceHint: "Ni. Un. Ruido.",
+
+  // Boss flow messages
+  bossPrepare: "PREPARAOS...",
+  bossCounterattack: "¡CONTRAATAQUE!",
+  bossRecovering: "LIQUID SE RECUPERA...",
+  bossDamageDealt: "¡DAÑO INFLIGIDO!",
+  bossActionFailed: "¡HABÉIS FALLADO!",
+  bossDefeated: "¡LIQUID DERROTADO!",
 
   // -- Shame timer --
   shamePenalty: "PENALIZACIÓN POR INCOMPETENCIA",
