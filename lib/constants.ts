@@ -86,7 +86,7 @@ export const CONFESSION_VOLUME_THRESHOLD = 0.25; // 0-1 RMS normalized
 export const CONFESSION_DURATION_SECONDS = 5;
 
 /** Memory challenge settings */
-export const MEMORY_ROUNDS = 5;
+export const MEMORY_ROUNDS = 4;
 export const MEMORY_INITIAL_SEQUENCE_LENGTH = 4;
 export const MEMORY_SEQUENCE_INCREMENT = 2;
 /** Base flash duration (ms) for round 1. Decreases by MEMORY_FLASH_SPEED_DECAY_MS each round. */
@@ -96,7 +96,7 @@ export const MEMORY_FLASH_SPEED_DECAY_MS = 100;
 /** Total attempts allowed across the whole challenge before failing */
 export const MEMORY_MAX_ATTEMPTS = 3;
 /** Which round number is the impossible troll round (must equal MEMORY_ROUNDS) */
-export const MEMORY_TROLL_ROUND = 5;
+export const MEMORY_TROLL_ROUND = 4;
 /** Sequence length for the troll round (impossible to memorize) */
 export const MEMORY_TROLL_SEQUENCE_LENGTH = 50;
 /** Flash duration (ms) per tile in the troll round — 50 tiles × 60ms = 3s total */

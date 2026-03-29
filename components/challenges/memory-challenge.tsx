@@ -26,9 +26,9 @@ import {
 
 // =============================================================================
 // MemoryChallenge - Sequence memory game with inside joke tiles
-// Rounds 1-4 get progressively harder (more tiles, faster flashes).
+// Rounds 1-3 get progressively harder (more tiles, faster flashes).
 // Players have 3 total attempts; a wrong tap on the same round retries it.
-// Round 5 is an impossible troll round that auto-completes on any failure.
+// Round 4 is an impossible troll round that auto-completes on any failure.
 // =============================================================================
 
 type MemoryChallengeProps = {
