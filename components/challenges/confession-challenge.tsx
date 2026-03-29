@@ -14,6 +14,7 @@ import {
   ScanLines,
   ProgressBar,
 } from "@/components/ui";
+import useMicrophone from "@/hooks/use-microphone";
 
 // =============================================================================
 // ConfessionChallenge - Microphone-based dare challenge
@@ -32,113 +33,69 @@ export default function ConfessionChallenge({
 }: ConfessionChallengeProps) {
   const [dareIndex, setDareIndex] = useState(0);
   const [phase, setPhase] = useState<"ready" | "listening" | "success" | "failed">("ready");
-  const [volume, setVolume] = useState(0);
   const [loudSeconds, setLoudSeconds] = useState(0);
-  const [micError, setMicError] = useState(false);
 
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const animationFrameRef = useRef<number>(0);
+  const { volume, isListening, hasError, start, stop } = useMicrophone();
+
+  // Keep a ref in sync with the latest volume so the setInterval callback
+  // can read it without stale closure issues.
+  const volumeRef = useRef(volume);
+  useEffect(() => {
+    volumeRef.current = volume;
+  }, [volume]);
+
   const loudTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const dareTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const currentDare = CONFESSION_DARES[dareIndex] ?? CONFESSION_DARES[0];
 
-  /** Start listening */
-  const startListening = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
+  /** Transition to listening phase once the hook confirms the mic is active */
+  useEffect(() => {
+    if (isListening) setPhase("listening");
+  }, [isListening]);
 
-      const audioContext = new AudioContext();
-      audioContextRef.current = audioContext;
+  /** Graceful degradation: auto-complete 3s after a mic error */
+  useEffect(() => {
+    if (!hasError) return;
+    const id = setTimeout(() => {
+      setPhase("success");
+      onComplete();
+    }, 3000);
+    return () => clearTimeout(id);
+  }, [hasError, onComplete]);
 
-      const source = audioContext.createMediaStreamSource(stream);
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;
-      source.connect(analyser);
-      analyserRef.current = analyser;
+  /** Track consecutive loud seconds while listening */
+  useEffect(() => {
+    if (phase !== "listening") return;
 
-      setPhase("listening");
+    let consecutiveLoud = 0;
 
-      // Shared helper: compute RMS volume from time-domain data (0-1 range)
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-      function computeRms(): number {
-        if (!analyserRef.current) return 0;
-        analyserRef.current.getByteTimeDomainData(dataArray);
-        let sumSquares = 0;
-        for (let i = 0; i < dataArray.length; i++) {
-          const normalized = (dataArray[i] - 128) / 128;
-          sumSquares += normalized * normalized;
+    loudTimerRef.current = setInterval(() => {
+      if (volumeRef.current >= CONFESSION_VOLUME_THRESHOLD) {
+        consecutiveLoud++;
+        setLoudSeconds(consecutiveLoud);
+
+        if (consecutiveLoud >= CONFESSION_DURATION_SECONDS) {
+          setPhase("success");
+          stop();
+          onComplete();
         }
-        return Math.sqrt(sumSquares / dataArray.length);
+      } else {
+        // Decay gradually rather than hard-reset to feel forgiving
+        consecutiveLoud = Math.max(0, consecutiveLoud - 1);
+        setLoudSeconds(consecutiveLoud);
       }
+    }, 1000);
 
-      // Volume monitoring loop (visual meter)
-      function updateVolume() {
-        const rms = computeRms();
-        setVolume(rms);
-        animationFrameRef.current = requestAnimationFrame(updateVolume);
+    return () => {
+      if (loudTimerRef.current) {
+        clearInterval(loudTimerRef.current);
+        loudTimerRef.current = null;
       }
-      updateVolume();
+    };
+  }, [phase, stop, onComplete]);
 
-      // Track consecutive loud seconds
-      let consecutiveLoud = 0;
-      loudTimerRef.current = setInterval(() => {
-        const currentVol = computeRms();
-
-        if (currentVol >= CONFESSION_VOLUME_THRESHOLD) {
-          consecutiveLoud++;
-          setLoudSeconds(consecutiveLoud);
-
-          if (consecutiveLoud >= CONFESSION_DURATION_SECONDS) {
-            // Success!
-            setPhase("success");
-            cleanup();
-            onComplete();
-          }
-        } else {
-          // Reset if they go quiet
-          consecutiveLoud = Math.max(0, consecutiveLoud - 1);
-          setLoudSeconds(consecutiveLoud);
-        }
-      }, 1000);
-    } catch {
-      setMicError(true);
-      // If mic fails, auto-complete after a few seconds (graceful degradation)
-      setTimeout(() => {
-        setPhase("success");
-        onComplete();
-      }, 3000);
-    }
-  }, [onComplete]);
-
-  /** Cleanup audio resources — idempotent: nulls refs so double-calls are safe */
-  const cleanup = useCallback(() => {
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = 0;
-    }
-    if (loudTimerRef.current) {
-      clearInterval(loudTimerRef.current);
-      loudTimerRef.current = null;
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    }
-    if (audioContextRef.current) {
-      audioContextRef.current.close();
-      audioContextRef.current = null;
-    }
-    analyserRef.current = null;
-  }, []);
-
-  // Cleanup on unmount
-  useEffect(() => cleanup, [cleanup]);
-
-  // Cycle through dares while listening — loops infinitely via modulo
+  /** Cycle through dares while listening — loops infinitely via modulo */
   useEffect(() => {
     if (phase !== "listening") return;
     dareTimerRef.current = setInterval(() => {
@@ -154,10 +111,10 @@ export default function ConfessionChallenge({
 
   /** Give up / fail */
   const handleGiveUp = useCallback(() => {
-    cleanup();
+    stop();
     setPhase("failed");
     onFail();
-  }, [cleanup, onFail]);
+  }, [stop, onFail]);
 
   // Taunting message based on volume
   const tauntMessage =
@@ -188,7 +145,7 @@ export default function ConfessionChallenge({
 
         {phase === "ready" && (
           <>
-            {micError ? (
+            {hasError ? (
               <p className="text-alert text-xs font-mono mb-4">
                 Error de micrófono. Completando automáticamente...
               </p>
@@ -196,7 +153,7 @@ export default function ConfessionChallenge({
               <IndustrialButton
                 variant="danger"
                 fullWidth
-                onClick={startListening}
+                onClick={start}
               >
                 EMPEZAR
               </IndustrialButton>

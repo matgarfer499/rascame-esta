@@ -3,9 +3,25 @@
 // =============================================================================
 // useMicrophone - Reusable hook for Web Audio API microphone volume monitoring
 // Returns real-time RMS volume (0-1) from the device microphone.
+//
+// Mobile compatibility notes:
+//   - AudioContext starts "suspended" on mobile; must call resume() after creation.
+//   - iOS WebKit exposes webkitAudioContext instead of AudioContext on older versions.
+//   - navigator.mediaDevices is only available on HTTPS; guard before calling.
 // =============================================================================
 
 import { useState, useRef, useCallback, useEffect } from "react";
+
+// Resolve the AudioContext constructor with the webkit prefix fallback for iOS.
+function resolveAudioContext(): typeof AudioContext | null {
+  if (typeof window === "undefined") return null;
+  return (
+    window.AudioContext ??
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).webkitAudioContext ??
+    null
+  );
+}
 
 type MicrophoneState = {
   /** Current RMS volume (0-1 range) */
@@ -69,11 +85,30 @@ export default function useMicrophone(): MicrophoneState {
   /** Start microphone capture and real-time volume monitoring */
   const start = useCallback(async () => {
     try {
+      // Guard: getUserMedia requires HTTPS and a supporting browser.
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setHasError(true);
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      const audioContext = new AudioContext();
+      const AudioCtx = resolveAudioContext();
+      if (!AudioCtx) {
+        setHasError(true);
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
+
+      const audioContext = new AudioCtx();
       audioContextRef.current = audioContext;
+
+      // Mobile browsers start AudioContext in "suspended" state.
+      // Resume must be called explicitly after a user gesture.
+      if (audioContext.state === "suspended") {
+        await audioContext.resume();
+      }
 
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
