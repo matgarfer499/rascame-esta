@@ -70,7 +70,7 @@ export default function CodecCall({
   actionLabel,
   onAction,
 }: CodecCallProps) {
-  const { phase, currentTime, stopRing, playAccepted, connect, startMessage } = useCodecAudio({
+  const { phase, currentTime, stopRing, playAccepted, connect, startMessage, unlockAll } = useCodecAudio({
     ringSrc,
     acceptedSrc,
     messageSrc,
@@ -86,7 +86,12 @@ export default function CodecCall({
   );
 
   // ── RESPONDER button handler ─────────────────────────────────────────
+  // unlockAll() MUST be called first, synchronously, while still inside the
+  // tap event handler. This resumes the shared Web Audio AudioContext so that
+  // the setTimeout-delayed message.play() (fired ~760ms later via the shutter
+  // animation) will be allowed by iOS Safari.
   const handleAnswer = () => {
+    unlockAll();
     stopRing();
     playAccepted();
     setShutterActive(true);
