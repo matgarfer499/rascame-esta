@@ -20,6 +20,7 @@
 
 import { useMemo, useState } from "react";
 import { useCodecAudio } from "@/hooks/use-codec-audio";
+import { useDebug } from "@/hooks/use-debug";
 import { UI } from "@/lib/i18n";
 import type { SubtitleCue } from "@/lib/types";
 import CodecFrame from "./codec-frame";
@@ -74,6 +75,7 @@ export default function CodecCall({
     acceptedSrc,
     messageSrc,
   });
+  const { isDebug } = useDebug();
 
   // Controls the shutter animation (false → true triggers the sequence)
   const [shutterActive, setShutterActive] = useState(false);
@@ -88,6 +90,12 @@ export default function CodecCall({
     stopRing();
     playAccepted();
     setShutterActive(true);
+  };
+
+  // ── DEBUG: skip the entire call sequence ─────────────────────────────
+  const handleSkip = () => {
+    stopRing();
+    onAction();
   };
 
   // ── Shutter midpoint: screen is black — swap CALL → Snake portrait ───
@@ -123,6 +131,16 @@ export default function CodecCall({
           <IndustrialButton variant="danger" onClick={handleAnswer}>
             {UI.codecAnswerCall}
           </IndustrialButton>
+        )}
+
+        {/* Debug skip button — bypasses the entire call sequence */}
+        {isDebug && phase !== "ended" && (
+          <button
+            onClick={handleSkip}
+            className="font-mono text-[10px] text-text-dead border border-bunker-700 px-2 py-1 hover:text-terminal hover:border-terminal"
+          >
+            SKIP CALL &gt;
+          </button>
         )}
 
         {/* Action button — shown after transmission ends */}

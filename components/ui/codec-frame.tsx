@@ -115,36 +115,37 @@ export default function CodecFrame({
       </div>
 
       {/* ── MIDDLE: Speaker name + horizontal VU meter ───────────────── */}
-      <div className="px-3 pt-3 pb-1 flex items-center gap-3">
-        {!isRinging && (
+      {/* Hidden during ringing — only appears once the call is accepted */}
+      {!isRinging && (
+        <div className="px-3 pt-3 pb-1 flex items-center gap-3">
           <span className="font-condensed text-base text-terminal tracking-widest w-12 shrink-0">
             {speakerName}
           </span>
-        )}
 
-        {/* VU meter container */}
-        <div className="flex-1 h-[18px] bg-terminal/10 overflow-hidden relative border border-terminal/20">
-          {/* Block texture overlay (always visible, gives the ░░░ look) */}
-          <div
-            className="absolute inset-0 pointer-events-none z-10"
-            style={{ backgroundImage: EQ_BLOCK_TEXTURE }}
-          />
+          {/* VU meter container */}
+          <div className="flex-1 h-[18px] bg-terminal/10 overflow-hidden relative border border-terminal/20">
+            {/* Block texture overlay (always visible, gives the ░░░ look) */}
+            <div
+              className="absolute inset-0 pointer-events-none z-10"
+              style={{ backgroundImage: EQ_BLOCK_TEXTURE }}
+            />
 
-          {/* Animated fill bar — only active while playing */}
-          {isPlaying ? (
-            <div
-              className="absolute inset-0 bg-terminal origin-left z-0"
-              style={{ animation: "eq-level 3.2s linear infinite" }}
-            />
-          ) : (
-            /* Static low-level indicator when not active */
-            <div
-              className="absolute inset-0 bg-terminal/30 origin-left z-0"
-              style={{ transform: "scaleX(0.12)" }}
-            />
-          )}
+            {/* Animated fill bar — only active while playing */}
+            {isPlaying ? (
+              <div
+                className="absolute inset-0 bg-terminal origin-left z-0"
+                style={{ animation: "eq-level 3.2s linear infinite" }}
+              />
+            ) : (
+              /* Static low-level indicator when not active */
+              <div
+                className="absolute inset-0 bg-terminal/30 origin-left z-0"
+                style={{ transform: "scaleX(0.12)" }}
+              />
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── FREQUENCY DIAL ───────────────────────────────────────────── */}
       <div className="px-3 py-4 text-center">
