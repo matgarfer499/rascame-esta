@@ -256,13 +256,13 @@ export default function GameOrchestrator({ secret }: GameOrchestratorProps) {
     });
   }, [state.screen, setScreen]);
 
-  /** Challenge failed — shame timer */
+  /** Challenge failed — shame timer, then retry the same challenge directly */
   const handleChallengeFailed = useCallback(
     (challengeId: ChallengeId) => {
       setScreen({
         type: "shame-timer",
         seconds: 30,
-        nextScreen: { type: "wall" },
+        nextScreen: { type: "challenge", challengeId },
       });
     },
     [setScreen],
