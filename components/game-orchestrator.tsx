@@ -231,16 +231,22 @@ export default function GameOrchestrator({ secret }: GameOrchestratorProps) {
         state.sessionId,
         challengeId,
       );
+
+      // Use server-returned eliminated IDs on success, fall back to empty list
+      // so the debrief codec always plays even if the server call failed.
+      const eliminatedIds =
+        result.success && result.data ? result.data.eliminatedCardIds : [];
+
       if (result.success && result.data) {
         completeChallenge(challengeId);
-
-        // All challenges go through debrief codec before elimination
-        setScreen({
-          type: "challenge-debrief",
-          challengeId,
-          eliminatedIds: result.data.eliminatedCardIds,
-        });
       }
+
+      // Always transition to the debrief — the Snake call must play.
+      setScreen({
+        type: "challenge-debrief",
+        challengeId,
+        eliminatedIds,
+      });
     },
     [state.sessionId, completeChallenge, setScreen],
   );

@@ -106,6 +106,12 @@ export default function BossChallenge({ onComplete, onFail }: BossChallengeProps
   const queueIndexRef = useRef(0);
   const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Keep callback refs stable so setTimeout closures always call the latest version
+  const onCompleteRef = useRef(onComplete);
+  const onFailRef = useRef(onFail);
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+  useEffect(() => { onFailRef.current = onFail; }, [onFail]);
+
   const phase = getPhase(hp);
 
   // Update glitch intensity based on phase
@@ -173,12 +179,12 @@ export default function BossChallenge({ onComplete, onFail }: BossChallengeProps
       if (typeof navigator !== "undefined" && navigator.vibrate) {
         navigator.vibrate([200, 100, 200, 100, 400]);
       }
-      setTimeout(onComplete, 2000);
+      setTimeout(() => onCompleteRef.current(), 2000);
     } else {
       setFightState("result-success");
       transitionTimerRef.current = setTimeout(transitionToNextAction, 1200);
     }
-  }, [currentAction, hp, onComplete, transitionToNextAction]);
+  }, [currentAction, hp, transitionToNextAction]);
 
   /** Handle action failure */
   const handleActionFail = useCallback(() => {
@@ -194,12 +200,12 @@ export default function BossChallenge({ onComplete, onFail }: BossChallengeProps
 
     if (newFailures >= BOSS_MAX_FAILURES) {
       setFightState("game-over");
-      setTimeout(onFail, 2000);
+      setTimeout(() => onFailRef.current(), 2000);
     } else {
       setFightState("result-fail");
       transitionTimerRef.current = setTimeout(transitionToNextAction, 1500);
     }
-  }, [failures, hp, onFail, transitionToNextAction]);
+  }, [failures, hp, transitionToNextAction]);
 
   // Start the first action on mount
   useEffect(() => {
