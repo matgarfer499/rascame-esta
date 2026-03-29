@@ -50,14 +50,14 @@ export default function ScratchScreen({
   const [codeOpacity, setCodeOpacity] = useState(1);
   const hasNotifiedRef = useRef(false);
 
-  /** When scratch threshold is reached */
+  /** Coverage threshold reached — notify parent to fetch code */
   const handleThresholdReached = useCallback(() => {
     if (hasNotifiedRef.current) return;
     hasNotifiedRef.current = true;
     onScratchComplete(cardId);
   }, [cardId, onScratchComplete]);
 
-  /** When code appears, transition to revealed phase */
+  /** When code arrives from server, transition to revealed phase */
   useEffect(() => {
     if (revealedCode && phase === "scratching") {
       setPhase("revealed");
@@ -193,17 +193,12 @@ export default function ScratchScreen({
             </p>
           </div>
         )}
-        {/* Back button (shown only when not revealed)*/}
+
+        {/* Back button (shown only when not revealed) */}
         {phase !== "revealed" && (
-          <>
-            <IndustrialButton
-              variant="ghost"
-              compact
-              onClick={onBack}
-            >
-              {UI.codeBackToWall}
-            </IndustrialButton>
-          </>
+          <IndustrialButton variant="ghost" compact onClick={onBack}>
+            {UI.codeBackToWall}
+          </IndustrialButton>
         )}
       </div>
     </ScreenShell>

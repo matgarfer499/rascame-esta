@@ -5,13 +5,15 @@ import { cn } from "@/lib/utils";
 import {
   SCRATCH_BRUSH_RADIUS,
   SCRATCH_COVERAGE_THRESHOLD,
-  SCRATCH_COVERAGE_CHECK_INTERVAL_MS,
+  SCRATCH_GRID_COLS,
+  SCRATCH_GRID_ROWS,
 } from "@/lib/constants";
 
 // =============================================================================
 // ScratchCanvas - Touch-based scratch-off canvas mechanic
-// Users scratch to reveal what's underneath by clearing a cover layer.
-// Coverage is calculated periodically and onThresholdReached fires once.
+// Uses grid-based coverage tracking instead of getImageData for mobile perf.
+// Line interpolation between touch points for gap-free strokes.
+// Coverage updates live on each stroke; threshold check fires on touch-end.
 // =============================================================================
 
 type ScratchCanvasProps = {
@@ -25,12 +27,93 @@ type ScratchCanvasProps = {
   threshold?: number;
   /** Called when scratch coverage meets the threshold */
   onThresholdReached: () => void;
-  /** Called with current coverage (0-1) on each check */
+  /** Called with current coverage (0-1) on each stroke */
   onCoverageUpdate?: (coverage: number) => void;
   /** Cover color (the "scratch-off" layer) */
   coverColor?: string;
   className?: string;
 };
+
+// ---------------------------------------------------------------------------
+// Grid-based coverage helpers (avoid getImageData GPU readback entirely)
+// ---------------------------------------------------------------------------
+
+/** Mark all grid cells overlapping a circle at (cx, cy) with given radius */
+function markCellsForCircle(
+  grid: Uint8Array,
+  cx: number,
+  cy: number,
+  radius: number,
+  cellW: number,
+  cellH: number,
+  cols: number,
+  rows: number,
+): void {
+  const minCol = Math.max(0, Math.floor((cx - radius) / cellW));
+  const maxCol = Math.min(cols - 1, Math.floor((cx + radius) / cellW));
+  const minRow = Math.max(0, Math.floor((cy - radius) / cellH));
+  const maxRow = Math.min(rows - 1, Math.floor((cy + radius) / cellH));
+
+  const rSq = radius * radius;
+
+  for (let row = minRow; row <= maxRow; row++) {
+    // Closest Y point of cell to circle center
+    const closestY = Math.max(row * cellH, Math.min(cy, (row + 1) * cellH));
+    const dy = closestY - cy;
+    for (let col = minCol; col <= maxCol; col++) {
+      if (grid[row * cols + col]) continue; // already marked
+      // Closest X point of cell to circle center
+      const closestX = Math.max(col * cellW, Math.min(cx, (col + 1) * cellW));
+      const dx = closestX - cx;
+      if (dx * dx + dy * dy <= rSq) {
+        grid[row * cols + col] = 1;
+      }
+    }
+  }
+}
+
+/** Mark grid cells along a line segment from (x0,y0) to (x1,y1) */
+function markCellsForLine(
+  grid: Uint8Array,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  radius: number,
+  cellW: number,
+  cellH: number,
+  cols: number,
+  rows: number,
+): void {
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  // Step in increments smaller than brush radius to avoid gaps in grid marking
+  const steps = Math.max(1, Math.ceil(dist / (radius * 0.5)));
+
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    markCellsForCircle(
+      grid,
+      x0 + dx * t,
+      y0 + dy * t,
+      radius,
+      cellW,
+      cellH,
+      cols,
+      rows,
+    );
+  }
+}
+
+/** Count marked cells and return coverage ratio (0-1) */
+function computeCoverage(grid: Uint8Array): number {
+  let marked = 0;
+  for (let i = 0; i < grid.length; i++) {
+    if (grid[i]) marked++;
+  }
+  return marked / grid.length;
+}
 
 export default function ScratchCanvas({
   width,
@@ -46,11 +129,19 @@ export default function ScratchCanvas({
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const isScratchingRef = useRef(false);
   const thresholdReachedRef = useRef(false);
-  const lastCheckRef = useRef(0);
+  const prevPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Grid-based coverage tracking (no GPU readback needed)
+  const gridRef = useRef<Uint8Array>(
+    new Uint8Array(SCRATCH_GRID_COLS * SCRATCH_GRID_ROWS),
+  );
+  const cellWRef = useRef(width / SCRATCH_GRID_COLS);
+  const cellHRef = useRef(height / SCRATCH_GRID_ROWS);
+
+  // Stable callback refs
   const onThresholdReachedRef = useRef(onThresholdReached);
   const onCoverageUpdateRef = useRef(onCoverageUpdate);
 
-  // Keep callback refs fresh
   useEffect(() => {
     onThresholdReachedRef.current = onThresholdReached;
   }, [onThresholdReached]);
@@ -60,24 +151,27 @@ export default function ScratchCanvas({
   }, [onCoverageUpdate]);
 
   // Device pixel ratio for crisp rendering
-  const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+  const dprRef = useRef(
+    typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1,
+  );
 
   /** Initialize cover layer */
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    const dpr = dprRef.current;
     canvas.width = width * dpr;
     canvas.height = height * dpr;
 
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     ctx.scale(dpr, dpr);
     ctx.fillStyle = coverColor;
     ctx.fillRect(0, 0, width, height);
 
-    // Draw a subtle pattern on the cover (cross-hatch lines)
+    // Subtle cross-hatch pattern on the cover
     ctx.strokeStyle = "#3A3A3A";
     ctx.lineWidth = 0.5;
     for (let i = 0; i < width + height; i += 8) {
@@ -96,62 +190,91 @@ export default function ScratchCanvas({
 
     ctxRef.current = ctx;
     thresholdReachedRef.current = false;
-  }, [width, height, dpr, coverColor]);
+    prevPosRef.current = null;
 
-  /** Calculate scratched coverage (percentage of transparent pixels) */
+    // Reset grid
+    const grid = new Uint8Array(SCRATCH_GRID_COLS * SCRATCH_GRID_ROWS);
+    gridRef.current = grid;
+    cellWRef.current = width / SCRATCH_GRID_COLS;
+    cellHRef.current = height / SCRATCH_GRID_ROWS;
+  }, [width, height, coverColor]);
+
+  /** Check grid coverage and fire threshold callback (called only on touch-end) */
   const checkCoverage = useCallback(() => {
-    const ctx = ctxRef.current;
-    if (!ctx || thresholdReachedRef.current) return;
+    if (thresholdReachedRef.current) return;
 
-    const now = performance.now();
-    if (now - lastCheckRef.current < SCRATCH_COVERAGE_CHECK_INTERVAL_MS) return;
-    lastCheckRef.current = now;
-
-    const imageData = ctx.getImageData(
-      0,
-      0,
-      width * dpr,
-      height * dpr,
-    );
-    const pixels = imageData.data;
-    let transparent = 0;
-    const total = pixels.length / 4;
-
-    // Check alpha channel of every 4th pixel for performance
-    for (let i = 3; i < pixels.length; i += 16) {
-      if (pixels[i] === 0) transparent++;
-    }
-
-    // Adjust total for sampling rate
-    const sampledTotal = Math.ceil(total / 4);
-    const coverage = transparent / sampledTotal;
-
-    onCoverageUpdateRef.current?.(coverage);
+    const coverage = computeCoverage(gridRef.current);
 
     if (coverage >= threshold) {
       thresholdReachedRef.current = true;
       onThresholdReachedRef.current();
     }
-  }, [width, height, dpr, threshold]);
+  }, [threshold]);
 
-  /** Scratch at a given position */
+  /** Draw a scratch stroke from prevPos to (x,y), update grid, fire live coverage update */
   const scratch = useCallback(
     (x: number, y: number) => {
       const ctx = ctxRef.current;
       if (!ctx || thresholdReachedRef.current) return;
 
-      ctx.globalCompositeOperation = "destination-out";
-      ctx.beginPath();
-      ctx.arc(x, y, brushRadius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalCompositeOperation = "source-over";
+      const prev = prevPosRef.current;
+      const grid = gridRef.current;
+      const cellW = cellWRef.current;
+      const cellH = cellHRef.current;
 
-      checkCoverage();
+      ctx.globalCompositeOperation = "destination-out";
+
+      if (prev) {
+        // Draw a line from previous position for gap-free strokes
+        ctx.lineWidth = brushRadius * 2;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.beginPath();
+        ctx.moveTo(prev.x, prev.y);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+
+        // Mark grid cells along the line
+        markCellsForLine(
+          grid,
+          prev.x,
+          prev.y,
+          x,
+          y,
+          brushRadius,
+          cellW,
+          cellH,
+          SCRATCH_GRID_COLS,
+          SCRATCH_GRID_ROWS,
+        );
+      } else {
+        // First touch — stamp a single circle
+        ctx.beginPath();
+        ctx.arc(x, y, brushRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        markCellsForCircle(
+          grid,
+          x,
+          y,
+          brushRadius,
+          cellW,
+          cellH,
+          SCRATCH_GRID_COLS,
+          SCRATCH_GRID_ROWS,
+        );
+      }
+
+      ctx.globalCompositeOperation = "source-over";
+      prevPosRef.current = { x, y };
+
+      // Live coverage update for progress bar (grid read is ~240 bytes, near-free)
+      onCoverageUpdateRef.current?.(computeCoverage(grid));
     },
-    [brushRadius, checkCoverage],
+    [brushRadius],
   );
 
-  /** Get position relative to canvas from a native or React event */
+  /** Get position relative to canvas from a touch or mouse event */
   const getPosition = useCallback(
     (e: TouchEvent | MouseEvent | React.MouseEvent) => {
       const canvas = canvasRef.current;
@@ -162,7 +285,6 @@ export default function ScratchCanvas({
       let clientY: number | undefined;
 
       if ("touches" in e) {
-        // Native TouchEvent
         clientX = e.touches[0]?.clientX;
         clientY = e.touches[0]?.clientY;
       } else {
@@ -180,12 +302,15 @@ export default function ScratchCanvas({
     [],
   );
 
-  // --- Native touch handlers (attached via addEventListener with passive: false) ---
+  // ---------------------------------------------------------------------------
+  // Native touch handlers (passive: false so preventDefault works)
+  // ---------------------------------------------------------------------------
 
   const handleTouchStart = useCallback(
     (e: TouchEvent) => {
       e.preventDefault();
       isScratchingRef.current = true;
+      prevPosRef.current = null; // reset line origin
       const pos = getPosition(e);
       if (pos) scratch(pos.x, pos.y);
     },
@@ -204,10 +329,10 @@ export default function ScratchCanvas({
 
   const handleTouchEnd = useCallback(() => {
     isScratchingRef.current = false;
-    checkCoverage();
+    prevPosRef.current = null;
+    checkCoverage(); // coverage only checked when finger lifts
   }, [checkCoverage]);
 
-  // Attach native touch listeners with { passive: false } so preventDefault works
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -223,12 +348,15 @@ export default function ScratchCanvas({
     };
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
-  // --- React mouse handlers (no passive issue with mouse events) ---
+  // ---------------------------------------------------------------------------
+  // React mouse handlers (desktop fallback)
+  // ---------------------------------------------------------------------------
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
       isScratchingRef.current = true;
+      prevPosRef.current = null;
       const pos = getPosition(e);
       if (pos) scratch(pos.x, pos.y);
     },
@@ -246,6 +374,7 @@ export default function ScratchCanvas({
 
   const handleMouseEnd = useCallback(() => {
     isScratchingRef.current = false;
+    prevPosRef.current = null;
     checkCoverage();
   }, [checkCoverage]);
 

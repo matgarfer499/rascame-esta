@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useGameState } from "@/hooks/use-game-state";
 import type { ChallengeId, Screen } from "@/lib/types";
-import { CHALLENGES, VICTORY_THRESHOLD } from "@/lib/constants";
+import { CHALLENGES } from "@/lib/constants";
 import {
   startGame,
   scratchCard as scratchCardAction,

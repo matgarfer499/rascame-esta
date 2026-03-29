@@ -22,7 +22,10 @@ export const SCRATCH_COVERAGE_THRESHOLD = 0.85;
 export const SCRATCH_COVERAGE_THRESHOLD_MERCY = 0.60;
 export const SCRATCH_BRUSH_RADIUS = 15;
 export const SCRATCH_BRUSH_RADIUS_MERCY = 25;
-export const SCRATCH_COVERAGE_CHECK_INTERVAL_MS = 500;
+
+/** Grid-based coverage tracking (avoids expensive getImageData on mobile) */
+export const SCRATCH_GRID_COLS = 20;
+export const SCRATCH_GRID_ROWS = 12;
 
 /** Code reveal timer (seconds before the code fades) */
 export const CODE_FADE_TIMER_SECONDS = 30;
