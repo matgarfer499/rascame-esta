@@ -173,7 +173,6 @@ export const CHALLENGE_4_DEBRIEF_SRC = "/sounds/fourth-challenge-succeed.mp3";
 
 /**
  * Timestamps (in seconds) for each subtitle line in intro-message.mp3.
- * Each entry corresponds to the same index in UI.introSubtitles.
  */
 export const CODEC_SUBTITLE_TIMESTAMPS: readonly number[] = [
   0.0, 3.7, 6.6, 10.6, 13.7, 16.4, 24.8, 29.3, 33.3, 37.3, 38.9, 43.3, 44.6, 46.2, 47.4
@@ -181,18 +180,16 @@ export const CODEC_SUBTITLE_TIMESTAMPS: readonly number[] = [
 
 /**
  * Timestamps (in seconds) for challenge 1 subtitle lines in first-challenge.mp3.
- * PLACEHOLDER — replace with real timestamps after listening to the audio.
  */
 export const CHALLENGE_1_SUBTITLE_TIMESTAMPS: readonly number[] = [
-  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+  0.0, 1.2, 8.0, 11.2, 15.0, 19.2, 23.3, 25.7, 29.7, 33.3, 35.4, 42.7, 49.3, 52.3, 55.3, 57.3
 ] as const;
 
 /**
  * Timestamps (in seconds) for challenge 2 subtitle lines in second-challenge.mp3.
- * PLACEHOLDER — replace with real timestamps after listening to the audio.
  */
 export const CHALLENGE_2_SUBTITLE_TIMESTAMPS: readonly number[] = [
-  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+  0.0, 6.9, 11.9, 14.8, 16.0, 19.9, 22.1, 24.8, 26.3, 27.9, 34.8, 40.7, 44.4
 ] as const;
 
 /**
@@ -200,7 +197,7 @@ export const CHALLENGE_2_SUBTITLE_TIMESTAMPS: readonly number[] = [
  * PLACEHOLDER — replace with real timestamps after listening to the audio.
  */
 export const CHALLENGE_3_SUBTITLE_TIMESTAMPS: readonly number[] = [
-  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+  0.0, 3.9, 6.2, 9.3, 15.0, 16.4, 19.1, 23.1, 24.5, 30.5, 34.7, 41.5, 43.5, 46.6, 49.3, 51.4
 ] as const;
 
 /**
@@ -208,7 +205,7 @@ export const CHALLENGE_3_SUBTITLE_TIMESTAMPS: readonly number[] = [
  * PLACEHOLDER — replace with real timestamps after listening to the audio.
  */
 export const CHALLENGE_4_SUBTITLE_TIMESTAMPS: readonly number[] = [
-  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+  0.0, 3.5, 4.9, 10.0, 12.5, 15.0, 18.4, 20.2, 24.7, 26.9, 29.4, 32.7, 36.3, 38.3
 ] as const;
 
 /**
@@ -216,7 +213,7 @@ export const CHALLENGE_4_SUBTITLE_TIMESTAMPS: readonly number[] = [
  * PLACEHOLDER — replace with real timestamps after listening to the audio.
  */
 export const CHALLENGE_1_DEBRIEF_SUBTITLE_TIMESTAMPS: readonly number[] = [
-  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+  0.0, 1.0, 3.7, 10.0, 12.9, 15.5, 18.4, 20.1
 ] as const;
 
 /**
@@ -224,7 +221,7 @@ export const CHALLENGE_1_DEBRIEF_SUBTITLE_TIMESTAMPS: readonly number[] = [
  * PLACEHOLDER — replace with real timestamps after listening to the audio.
  */
 export const CHALLENGE_2_DEBRIEF_SUBTITLE_TIMESTAMPS: readonly number[] = [
-  0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+  0.0, 1.1, 4.1, 10.4, 15.4, 19.1, 22.4
 ] as const;
 
 /**
@@ -232,7 +229,7 @@ export const CHALLENGE_2_DEBRIEF_SUBTITLE_TIMESTAMPS: readonly number[] = [
  * PLACEHOLDER — replace with real timestamps after listening to the audio.
  */
 export const CHALLENGE_3_DEBRIEF_SUBTITLE_TIMESTAMPS: readonly number[] = [
-  0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+  0.0, 3.0, 7.4, 13.2, 16.9, 21.3, 25.9
 ] as const;
 
 /**
@@ -240,5 +237,5 @@ export const CHALLENGE_3_DEBRIEF_SUBTITLE_TIMESTAMPS: readonly number[] = [
  * PLACEHOLDER — replace with real timestamps after listening to the audio.
  */
 export const CHALLENGE_4_DEBRIEF_SUBTITLE_TIMESTAMPS: readonly number[] = [
-  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+  0.0, 3.1, 7.8, 12.2, 15.0, 18.4, 22.1, 25.4
 ] as const;
