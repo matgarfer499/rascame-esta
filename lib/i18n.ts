@@ -289,11 +289,11 @@ export const UI = {
   victoryTime: "TIEMPO:",
   victoryCodesListTitle: "TUS CÓDIGOS PSN",
 
-  // -- Victory message (PLACEHOLDER - replace with your personal message) --
+  // -- Victory message --
   victoryMessage:
-    "PLACEHOLDER: Tu mensaje personal de feliz cumpleaños va aquí. Hazlo emotivo, contrasta con toda la crueldad anterior.",
-  victorySender: "TU NOMBRE AQUÍ", // PLACEHOLDER
-  victoryHappyBirthday: "Feliz Cumpleaños",
+    "Ibamos a poner una mariconada aqui, pero para maricones ya estais vosotros.",
+  victorySender: "El Uyuyuyuy FC",
+  victoryHappyBirthday: "Feliz Cumpleaños <3",
 
   // -- Access denied --
   accessDenied: "ACCESO DENEGADO",

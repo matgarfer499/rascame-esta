@@ -194,7 +194,6 @@ export const CHALLENGE_2_SUBTITLE_TIMESTAMPS: readonly number[] = [
 
 /**
  * Timestamps (in seconds) for challenge 3 subtitle lines in third-challenge.mp3.
- * PLACEHOLDER — replace with real timestamps after listening to the audio.
  */
 export const CHALLENGE_3_SUBTITLE_TIMESTAMPS: readonly number[] = [
   0.0, 3.9, 6.2, 9.3, 15.0, 16.4, 19.1, 23.1, 24.5, 30.5, 34.7, 41.5, 43.5, 46.6, 49.3, 51.4
@@ -202,7 +201,6 @@ export const CHALLENGE_3_SUBTITLE_TIMESTAMPS: readonly number[] = [
 
 /**
  * Timestamps (in seconds) for challenge 4 subtitle lines in fourth-challenge.mp3.
- * PLACEHOLDER — replace with real timestamps after listening to the audio.
  */
 export const CHALLENGE_4_SUBTITLE_TIMESTAMPS: readonly number[] = [
   0.0, 3.5, 4.9, 10.0, 12.5, 15.0, 18.4, 20.2, 24.7, 26.9, 29.4, 32.7, 36.3, 38.3
@@ -210,7 +208,6 @@ export const CHALLENGE_4_SUBTITLE_TIMESTAMPS: readonly number[] = [
 
 /**
  * Timestamps for the challenge 1 debrief codec (first-challenge-succeded.mp3).
- * PLACEHOLDER — replace with real timestamps after listening to the audio.
  */
 export const CHALLENGE_1_DEBRIEF_SUBTITLE_TIMESTAMPS: readonly number[] = [
   0.0, 1.0, 3.7, 10.0, 12.9, 15.5, 18.4, 20.1
@@ -218,7 +215,6 @@ export const CHALLENGE_1_DEBRIEF_SUBTITLE_TIMESTAMPS: readonly number[] = [
 
 /**
  * Timestamps for the challenge 2 debrief codec (second-challenge-succeded.mp3).
- * PLACEHOLDER — replace with real timestamps after listening to the audio.
  */
 export const CHALLENGE_2_DEBRIEF_SUBTITLE_TIMESTAMPS: readonly number[] = [
   0.0, 1.1, 4.1, 10.4, 15.4, 19.1, 22.4
@@ -226,7 +222,6 @@ export const CHALLENGE_2_DEBRIEF_SUBTITLE_TIMESTAMPS: readonly number[] = [
 
 /**
  * Timestamps for the challenge 3 debrief codec (third-challenge-succeded.mp3).
- * PLACEHOLDER — replace with real timestamps after listening to the audio.
  */
 export const CHALLENGE_3_DEBRIEF_SUBTITLE_TIMESTAMPS: readonly number[] = [
   0.0, 3.0, 7.4, 13.2, 16.9, 21.3, 25.9
@@ -234,7 +229,6 @@ export const CHALLENGE_3_DEBRIEF_SUBTITLE_TIMESTAMPS: readonly number[] = [
 
 /**
  * Timestamps for the challenge 4 debrief codec (fourth-challenge-succeed.mp3).
- * PLACEHOLDER — replace with real timestamps after listening to the audio.
  */
 export const CHALLENGE_4_DEBRIEF_SUBTITLE_TIMESTAMPS: readonly number[] = [
   0.0, 3.1, 7.8, 12.2, 15.0, 18.4, 22.1, 25.4
