@@ -212,6 +212,8 @@ export const UI = {
   // -- Trivia specific --
   triviaTitle: "TRIVIA GEMELA",
   triviaQuestion: "Pregunta",
+  triviaCorrect: "Correctas",
+  triviaNeeded: "necesarias",
 
   // -- Confession specific --
   confessionTitle: "LA CONFESIÓN",

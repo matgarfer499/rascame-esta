@@ -102,7 +102,6 @@ export type TriviaQuestion = {
   question: string;
   options: string[];
   correctIndex: number;
-  targetTwin: "cristobal" | "miguel";
 };
 
 /** Memory tile for the Memory Lane challenge */

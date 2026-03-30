@@ -77,9 +77,8 @@ export const MERCY_CODES_FOUND_THRESHOLD = 5; // Fewer than 5 found triggers mer
 export const IDLE_WARNING_SECONDS = 30;
 
 /** Trivia challenge settings */
-export const TRIVIA_QUESTIONS_PER_ROUND = 5;
-export const TRIVIA_CORRECT_TO_PASS = 4;
-export const TRIVIA_TIME_LIMIT_SECONDS = 45;
+export const TRIVIA_QUESTIONS_PER_ROUND = 10;
+export const TRIVIA_CORRECT_TO_PASS = 7;
 
 /** Confession challenge settings */
 export const CONFESSION_VOLUME_THRESHOLD = 0.25; // 0-1 RMS normalized

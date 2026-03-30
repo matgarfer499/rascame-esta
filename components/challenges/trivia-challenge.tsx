@@ -6,7 +6,6 @@ import { UI } from "@/lib/i18n";
 import {
   TRIVIA_QUESTIONS_PER_ROUND,
   TRIVIA_CORRECT_TO_PASS,
-  TRIVIA_TIME_LIMIT_SECONDS,
 } from "@/lib/constants";
 import { shuffle } from "@/lib/utils";
 import { TRIVIA_QUESTIONS } from "@/lib/content";
@@ -15,14 +14,13 @@ import {
   IndustrialButton,
   ScreenShell,
   ScanLines,
-  Timer,
   ProgressBar,
 } from "@/components/ui";
 
 // =============================================================================
-// TriviaChallenge - Split-screen trivia about the opposite twin
-// Each twin answers questions about the other.
-// Need TRIVIA_CORRECT_TO_PASS correct out of TRIVIA_QUESTIONS_PER_ROUND.
+// TriviaChallenge - Group trivia about the friend circle
+// All 10 questions shown each round. Need TRIVIA_CORRECT_TO_PASS to win.
+// No time limit — enjoy the questions and have a laugh.
 // =============================================================================
 
 type TriviaChallengeProps = {
@@ -34,17 +32,25 @@ export default function TriviaChallenge({
   onComplete,
   onFail,
 }: TriviaChallengeProps) {
-  // Select random questions
+  // Shuffle questions and their options once on mount
   const questions = useMemo(() => {
-    const shuffled = shuffle([...TRIVIA_QUESTIONS]);
-    return shuffled.slice(0, TRIVIA_QUESTIONS_PER_ROUND);
+    return shuffle([...TRIVIA_QUESTIONS])
+      .slice(0, TRIVIA_QUESTIONS_PER_ROUND)
+      .map((q) => {
+        const correctAnswer = q.options[q.correctIndex];
+        const shuffledOptions = shuffle([...q.options]);
+        return {
+          ...q,
+          options: shuffledOptions,
+          correctIndex: shuffledOptions.indexOf(correctAnswer),
+        };
+      });
   }, []);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
-  const [finished, setFinished] = useState(false);
 
   const currentQuestion = questions[currentIndex] as TriviaQuestion | undefined;
 
@@ -59,13 +65,11 @@ export default function TriviaChallenge({
       const isCorrect = optionIndex === currentQuestion.correctIndex;
       const newCorrectCount = isCorrect ? correctCount + 1 : correctCount;
 
-      // After a brief delay, move to next question or finish
+      // After brief feedback delay, advance or finish
       setTimeout(() => {
         const nextIndex = currentIndex + 1;
 
         if (nextIndex >= questions.length) {
-          // All questions answered
-          setFinished(true);
           if (newCorrectCount >= TRIVIA_CORRECT_TO_PASS) {
             onComplete();
           } else {
@@ -83,20 +87,7 @@ export default function TriviaChallenge({
     [showResult, currentQuestion, correctCount, currentIndex, questions.length, onComplete, onFail],
   );
 
-  /** Time ran out */
-  const handleTimeUp = useCallback(() => {
-    if (!finished) {
-      setFinished(true);
-      onFail();
-    }
-  }, [finished, onFail]);
-
   if (!currentQuestion) return null;
-
-  const targetTwinName =
-    currentQuestion.targetTwin === "cristobal" ? UI.twin1 : UI.twin2;
-  const answeringTwinName =
-    currentQuestion.targetTwin === "cristobal" ? UI.twin2 : UI.twin1;
 
   return (
     <ScreenShell centered>
@@ -104,16 +95,10 @@ export default function TriviaChallenge({
 
       <div className="w-full max-w-sm">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4">
           <h2 className="font-condensed text-2xl text-warning uppercase tracking-wider">
             {UI.triviaTitle}
           </h2>
-          <Timer
-            initialSeconds={TRIVIA_TIME_LIMIT_SECONDS}
-            mode="countdown"
-            variant="alert"
-            onComplete={handleTimeUp}
-          />
         </div>
 
         {/* Progress */}
@@ -132,14 +117,9 @@ export default function TriviaChallenge({
         {/* Score */}
         <div className="flex justify-between mb-4 text-xs font-mono">
           <span className="text-terminal">
-            Correctas: {correctCount}/{TRIVIA_CORRECT_TO_PASS} necesarias
+            {UI.triviaCorrect}: {correctCount}/{TRIVIA_CORRECT_TO_PASS} {UI.triviaNeeded}
           </span>
         </div>
-
-        {/* Who answers */}
-        <p className="font-mono text-xs text-text-dim mb-2">
-          {answeringTwinName} responde sobre {targetTwinName}:
-        </p>
 
         {/* Question */}
         <div className="border-2 border-warning p-3 mb-4">
