@@ -118,7 +118,7 @@ export default function ConfessionChallenge({
 
   // Taunting message based on volume
   const tauntMessage =
-    volume < 0.08
+    volume < 0.03
       ? UI.confessionLouder
       : volume < CONFESSION_VOLUME_THRESHOLD
         ? UI.confessionIsAllYouGot
@@ -174,11 +174,11 @@ export default function ConfessionChallenge({
                       : "text-alert",
                   )}
                 >
-                  {Math.round(Math.min(volume / 0.5, 1) * 100)}%
+                  {Math.round(Math.min(volume / 0.25, 1) * 100)}%
                 </span>
               </div>
               <ProgressBar
-                value={volume / 0.5}
+                value={volume / 0.25}
                 variant={
                   volume >= CONFESSION_VOLUME_THRESHOLD ? "terminal" : "alert"
                 }

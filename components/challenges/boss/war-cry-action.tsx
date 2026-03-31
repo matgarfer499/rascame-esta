@@ -92,7 +92,7 @@ export default function WarCryAction({
     return () => clearInterval(timer);
   }, [isListening, active, volume, duration, handleResult]);
 
-  const volumePercent = Math.min(volume / 0.5, 1);
+  const volumePercent = Math.min(volume / 0.25, 1);
 
   return (
     <div className="w-full flex flex-col items-center gap-4">
@@ -137,7 +137,7 @@ export default function WarCryAction({
             : "text-alert animate-[pulse-alert_500ms_step-end_infinite]",
         )}
       >
-        {volume < 0.08
+        {volume < 0.03
           ? UI.confessionLouder
           : volume < BOSS_VOLUME_THRESHOLD
             ? UI.confessionIsAllYouGot

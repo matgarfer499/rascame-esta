@@ -102,7 +102,7 @@ export default function TacticalSilenceAction({
     return () => clearInterval(timer);
   }, [isListening]);
 
-  const noiseLevel = Math.min(volume / 0.3, 1);
+  const noiseLevel = Math.min(volume / 0.15, 1);
   const isTooLoud = volume > BOSS_SILENCE_THRESHOLD;
 
   return (

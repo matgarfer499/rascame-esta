@@ -81,7 +81,7 @@ export const TRIVIA_QUESTIONS_PER_ROUND = 10;
 export const TRIVIA_CORRECT_TO_PASS = 7;
 
 /** Confession challenge settings */
-export const CONFESSION_VOLUME_THRESHOLD = 0.25; // 0-1 RMS normalized
+export const CONFESSION_VOLUME_THRESHOLD = 0.1; // 0-1 RMS normalized (lowered for mobile mic sensitivity)
 export const CONFESSION_DURATION_SECONDS = 5;
 
 /** Memory challenge settings */
@@ -111,8 +111,8 @@ export const BOSS_MAX_FAILURES = 5;
 export const BOSS_PHASE_2_THRESHOLD = 70;
 export const BOSS_PHASE_3_THRESHOLD = 30;
 export const BOSS_STABILITY_THRESHOLD = 0.5;
-export const BOSS_VOLUME_THRESHOLD = 0.25;
-export const BOSS_SILENCE_THRESHOLD = 0.08;
+export const BOSS_VOLUME_THRESHOLD = 0.1;
+export const BOSS_SILENCE_THRESHOLD = 0.04;
 export const BOSS_DISTRACTION_INTERVAL_MS = 3000;
 /** Delay between actions (ms) — the "prepare" pause */
 export const BOSS_ACTION_GAP_MS = 2000;
