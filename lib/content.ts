@@ -113,15 +113,15 @@ export const CONFESSION_DARES: string[] = [
  * 9 tiles with inside joke references. Can include text and optional images.
  */
 export const MEMORY_TILES: MemoryTile[] = [
-  { id: 1, text: "PLACEHOLDER: Referencia #1" },
-  { id: 2, text: "PLACEHOLDER: Referencia #2" },
-  { id: 3, text: "PLACEHOLDER: Referencia #3" },
-  { id: 4, text: "PLACEHOLDER: Referencia #4" },
-  { id: 5, text: "PLACEHOLDER: Referencia #5" },
-  { id: 6, text: "PLACEHOLDER: Referencia #6" },
-  { id: 7, text: "PLACEHOLDER: Referencia #7" },
-  { id: 8, text: "PLACEHOLDER: Referencia #8" },
-  { id: 9, text: "PLACEHOLDER: Referencia #9" },
+  { id: 1, text: "MIGUEL" },
+  { id: 2, text: "CRISTONAL" },
+  { id: 3, text: "JAMELE" },
+  { id: 4, text: "MATIAS" },
+  { id: 5, text: "MATEO" },
+  { id: 6, text: "MILLAN" },
+  { id: 7, text: "FALI" },
+  { id: 8, text: "PAMPLONA" },
+  { id: 9, text: "ERNESTO" },
 ];
 
 /**

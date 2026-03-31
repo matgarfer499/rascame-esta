@@ -3,7 +3,6 @@
 // =============================================================================
 // useSound - Howler.js-based sound system for game audio
 // Manages loading, playing, and toggling sounds.
-// Sound files go in public/sounds/ — placeholder paths until real files added.
 // =============================================================================
 
 import { useCallback, useEffect, useRef, useState } from "react";

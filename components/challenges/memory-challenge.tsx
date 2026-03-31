@@ -31,6 +31,10 @@ import {
 // Round 4 is an impossible troll round that auto-completes on any failure.
 // =============================================================================
 
+// Pentatonic C major scale (C4–G5): each tile gets a distinct frequency so
+// the sequence is audible as well as visual.
+const TILE_FREQUENCIES = [262, 294, 330, 392, 440, 523, 587, 659, 784];
+
 type MemoryChallengeProps = {
   onComplete: () => void;
   onFail: () => void;
@@ -54,6 +58,43 @@ export default function MemoryChallenge({
   const tiles = useMemo<MemoryTile[]>(
     () => shuffle([...MEMORY_TILES]).slice(0, 9),
     [],
+  );
+
+  // Stable tile → frequency map: each tile keeps the same tone for the whole game.
+  const tileFrequencies = useMemo(
+    () => new Map(tiles.map((t, i) => [t.id, TILE_FREQUENCIES[i]])),
+    [tiles],
+  );
+
+  // Single AudioContext reused across all tone plays (lazy-init on first tap).
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
+  /** Play a short triangle-wave beep at the frequency assigned to this tile. */
+  const playTone = useCallback(
+    (tileId: number) => {
+      const freq = tileFrequencies.get(tileId);
+      if (freq === undefined) return;
+
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new AudioContext();
+      }
+      const ctx = audioCtxRef.current;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = "triangle";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.15);
+    },
+    [tileFrequencies],
   );
 
   const [round, setRound] = useState(1);
@@ -103,6 +144,7 @@ export default function MemoryChallenge({
 
       for (const tileId of seq) {
         setActiveTileId(tileId);
+        playTone(tileId);
         await delay(flashDuration);
         setActiveTileId(null);
         await delay(gapDuration);
@@ -110,7 +152,7 @@ export default function MemoryChallenge({
 
       setPhase("input");
     },
-    [],
+    [playTone],
   );
 
   /** Start (or restart) a round. */
@@ -139,8 +181,9 @@ export default function MemoryChallenge({
       const newInput = [...playerInput, tileId];
       setPlayerInput(newInput);
 
-      // Brief visual feedback on the tapped tile
+      // Brief visual + audio feedback on the tapped tile
       setActiveTileId(tileId);
+      playTone(tileId);
       setTimeout(() => setActiveTileId(null), 200);
 
       const inputIndex = newInput.length - 1;
@@ -198,7 +241,7 @@ export default function MemoryChallenge({
         }, 1500);
       }
     },
-    [phase, playerInput, sequence, startRound, onComplete, onFail],
+    [phase, playerInput, sequence, startRound, onComplete, onFail, playTone],
   );
 
   // -------------------------------------------------------------------------
