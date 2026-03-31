@@ -6,6 +6,8 @@ import { UI } from "@/lib/i18n";
 import {
   CONFESSION_VOLUME_THRESHOLD,
   CONFESSION_DURATION_SECONDS,
+  CONFESSION_TICK_MS,
+  CONFESSION_GRACE_MS,
 } from "@/lib/constants";
 import { CONFESSION_DARES } from "@/lib/content";
 import {
@@ -34,6 +36,12 @@ export default function ConfessionChallenge({
   const [dareIndex, setDareIndex] = useState(0);
   const [phase, setPhase] = useState<"ready" | "listening" | "success" | "failed">("ready");
   const [loudSeconds, setLoudSeconds] = useState(0);
+
+  // How many ticks (at CONFESSION_TICK_MS each) make up the target duration
+  const TICKS_PER_SECOND = 1000 / CONFESSION_TICK_MS;
+  const TARGET_TICKS = CONFESSION_DURATION_SECONDS * TICKS_PER_SECOND;
+  // How many consecutive silent ticks are allowed before progress starts decaying
+  const GRACE_TICKS = Math.round(CONFESSION_GRACE_MS / CONFESSION_TICK_MS);
 
   const { volume, isListening, hasError, start, stop } = useMicrophone();
 
@@ -64,28 +72,45 @@ export default function ConfessionChallenge({
     return () => clearTimeout(id);
   }, [hasError, onComplete]);
 
-  /** Track consecutive loud seconds while listening */
+  /** Track accumulated loud ticks while listening.
+   *
+   * Sampling every CONFESSION_TICK_MS (200ms) gives finer granularity than 1s
+   * ticks. Natural speech pauses (< CONFESSION_GRACE_MS) don't penalise the
+   * player: progress freezes during the grace window and only decays if the
+   * player stays quiet beyond it.
+   */
   useEffect(() => {
     if (phase !== "listening") return;
 
-    let consecutiveLoud = 0;
+    // Mutable counters — live inside the interval closure via ref so React
+    // state updates don't cause stale-closure bugs.
+    let loudTicks = 0;   // accumulated loud ticks (capped at TARGET_TICKS)
+    let silentTicks = 0; // consecutive silent ticks since last loud sample
 
     loudTimerRef.current = setInterval(() => {
       if (volumeRef.current >= CONFESSION_VOLUME_THRESHOLD) {
-        consecutiveLoud++;
-        setLoudSeconds(consecutiveLoud);
-
-        if (consecutiveLoud >= CONFESSION_DURATION_SECONDS) {
-          setPhase("success");
-          stop();
-          onComplete();
-        }
+        // Player is loud: accumulate, reset the silence streak
+        loudTicks = Math.min(loudTicks + 1, TARGET_TICKS);
+        silentTicks = 0;
       } else {
-        // Decay gradually rather than hard-reset to feel forgiving
-        consecutiveLoud = Math.max(0, consecutiveLoud - 1);
-        setLoudSeconds(consecutiveLoud);
+        silentTicks++;
+        // Only start decaying once the grace window is exhausted
+        if (silentTicks > GRACE_TICKS) {
+          // Decay 1 tick per silent tick beyond grace (≈ 1s lost per real second of silence)
+          loudTicks = Math.max(0, loudTicks - 1);
+        }
       }
-    }, 1000);
+
+      // Convert ticks → fractional seconds for the display
+      const seconds = loudTicks / TICKS_PER_SECOND;
+      setLoudSeconds(seconds);
+
+      if (loudTicks >= TARGET_TICKS) {
+        setPhase("success");
+        stop();
+        onComplete();
+      }
+    }, CONFESSION_TICK_MS);
 
     return () => {
       if (loudTimerRef.current) {
@@ -93,7 +118,7 @@ export default function ConfessionChallenge({
         loudTimerRef.current = null;
       }
     };
-  }, [phase, stop, onComplete]);
+  }, [phase, stop, onComplete, TARGET_TICKS, GRACE_TICKS, TICKS_PER_SECOND]);
 
   /** Cycle through dares while listening — loops infinitely via modulo */
   useEffect(() => {
@@ -195,7 +220,7 @@ export default function ConfessionChallenge({
                 height="h-4"
               />
               <p className="text-text-dead text-[10px] font-mono text-center mt-1">
-                {loudSeconds}/{CONFESSION_DURATION_SECONDS}s a volumen alto
+                {Math.floor(loudSeconds)}/{CONFESSION_DURATION_SECONDS}s a volumen alto
               </p>
             </div>
 
