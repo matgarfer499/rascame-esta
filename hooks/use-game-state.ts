@@ -198,9 +198,12 @@ export function useGameState() {
     }
   }, []);
 
-  /** Count of non-eliminated, non-confirmed cards */
+  /** Count of sealed cards (not yet scratched, eliminated, or confirmed) */
   const cardsRemaining = state.cards.filter(
-    (c) => c.status !== "eliminated" && c.status !== "confirmed",
+    (c) =>
+      c.status !== "eliminated" &&
+      c.status !== "confirmed" &&
+      c.status !== "scratched",
   ).length;
 
   return {

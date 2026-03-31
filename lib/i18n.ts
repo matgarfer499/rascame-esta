@@ -273,6 +273,7 @@ export const UI = {
 
   // -- Elimination --
   eliminationTitle: "ELIMINANDO EXPEDIENTES FALSOS",
+  eliminationContinue: "CONTINUAR",
 
   // -- Resume screen --
   resumeTitle: "⚠ OPERACIÓN INTERRUMPIDA ⚠",

@@ -145,7 +145,10 @@ export const STORAGE_SESSION_KEY = "rascame-esta-session";
 export const STORAGE_GAME_STATE_KEY = "rascame-esta-state";
 
 /** Elimination animation stagger delay per card (ms) */
-export const ELIMINATION_STAGGER_MS = 100;
+export const ELIMINATION_STAGGER_MS = 400;
+
+/** Delay (ms) after animation completes before showing the continue button */
+export const ELIMINATION_CONTINUE_DELAY_MS = 3000;
 
 /** Codes confirmed to trigger victory */
 export const VICTORY_THRESHOLD = REAL_CODES_COUNT;

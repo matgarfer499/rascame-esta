@@ -3,7 +3,10 @@
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { UI } from "@/lib/i18n";
-import { ELIMINATION_STAGGER_MS } from "@/lib/constants";
+import {
+  ELIMINATION_STAGGER_MS,
+  ELIMINATION_CONTINUE_DELAY_MS,
+} from "@/lib/constants";
 import { delay } from "@/lib/utils";
 import { ScreenShell, ScanLines } from "@/components/ui";
 import { useSound } from "@/hooks";
@@ -23,6 +26,7 @@ export default function EliminationScreen({
   onComplete,
 }: EliminationScreenProps) {
   const [revealedCount, setRevealedCount] = useState(0);
+  const [showContinue, setShowContinue] = useState(false);
   const onCompleteRef = useRef(onComplete);
   const { play } = useSound();
 
@@ -43,9 +47,9 @@ export default function EliminationScreen({
         setRevealedCount(i + 1);
       }
 
-      // Brief pause after all eliminated, then proceed
-      await delay(800);
-      if (!cancelled) onCompleteRef.current();
+      // Wait before showing continue button so the audio has time to play
+      await delay(ELIMINATION_CONTINUE_DELAY_MS);
+      if (!cancelled) setShowContinue(true);
     }
 
     animateElimination();
@@ -74,7 +78,7 @@ export default function EliminationScreen({
         </div>
 
         {/* Visual representation — small grid of boxes getting crossed out */}
-        <div className="flex flex-wrap gap-1 justify-center max-w-xs mx-auto">
+        <div className="flex flex-wrap gap-1 justify-center max-w-xs mx-auto mb-8">
           {eliminatedIds.map((id, idx) => (
             <div
               key={id}
@@ -91,6 +95,22 @@ export default function EliminationScreen({
             </div>
           ))}
         </div>
+
+        {/* Continue button — appears after animation + delay */}
+        {showContinue && (
+          <button
+            onClick={onCompleteRef.current}
+            className={cn(
+              "w-full border border-military-green text-military-green",
+              "font-condensed text-xl uppercase tracking-widest",
+              "py-3 px-6",
+              "hover:bg-military-green hover:text-bunker-950",
+              "active:scale-95 transition-colors",
+            )}
+          >
+            {UI.eliminationContinue}
+          </button>
+        )}
       </div>
     </ScreenShell>
   );
