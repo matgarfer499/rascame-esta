@@ -29,6 +29,7 @@ import {
   QuickComboAction,
   TacticalSilenceAction,
 } from "./boss";
+import { useSound } from "@/hooks";
 
 // =============================================================================
 // Types
@@ -111,6 +112,8 @@ export default function BossChallenge({ onComplete, onFail }: BossChallengeProps
   const onFailRef = useRef(onFail);
   useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
   useEffect(() => { onFailRef.current = onFail; }, [onFail]);
+
+  const { play, stop, fadeOut, fadeIn } = useSound();
 
   const phase = getPhase(hp);
 
@@ -217,6 +220,36 @@ export default function BossChallenge({ onComplete, onFail }: BossChallengeProps
     }, BOSS_ACTION_GAP_MS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Play boss theme on mount, stop on unmount
+  useEffect(() => {
+    play("boss-theme");
+    return () => {
+      stop("boss-theme");
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fade music out during tactical-silence prepare/action phases; fade back in on result
+  useEffect(() => {
+    if (currentAction !== "tactical-silence") return;
+
+    if (fightState === "prepare") {
+      // Begin fade-out as soon as the prepare phase starts — music will be gone
+      // before the microphone activates in the "action" phase
+      fadeOut("boss-theme", 1000);
+    } else if (fightState === "result-success" || fightState === "result-fail") {
+      // Mic is no longer active — bring the music back
+      fadeIn("boss-theme", 1000);
+    }
+  }, [fightState, currentAction, fadeOut, fadeIn]);
+
+  // Stop music on terminal states
+  useEffect(() => {
+    if (fightState === "defeated" || fightState === "game-over") {
+      stop("boss-theme");
+    }
+  }, [fightState, stop]);
 
   // ----- Render -----
 

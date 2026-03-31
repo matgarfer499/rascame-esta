@@ -6,6 +6,7 @@ import { UI } from "@/lib/i18n";
 import { ELIMINATION_STAGGER_MS } from "@/lib/constants";
 import { delay } from "@/lib/utils";
 import { ScreenShell, ScanLines } from "@/components/ui";
+import { useSound } from "@/hooks";
 
 // =============================================================================
 // EliminationScreen - Animated display of fake cards being eliminated
@@ -23,6 +24,7 @@ export default function EliminationScreen({
 }: EliminationScreenProps) {
   const [revealedCount, setRevealedCount] = useState(0);
   const onCompleteRef = useRef(onComplete);
+  const { play } = useSound();
 
   // Keep callback ref fresh without re-triggering the animation effect
   useEffect(() => {
@@ -33,6 +35,8 @@ export default function EliminationScreen({
     let cancelled = false;
 
     async function animateElimination() {
+      play("elimination");
+
       for (let i = 0; i < eliminatedIds.length; i++) {
         if (cancelled) break;
         await delay(ELIMINATION_STAGGER_MS);
@@ -48,7 +52,7 @@ export default function EliminationScreen({
     return () => {
       cancelled = true;
     };
-  }, [eliminatedIds]);
+  }, [eliminatedIds, play]);
 
   return (
     <ScreenShell centered>
