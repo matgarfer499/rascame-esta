@@ -193,7 +193,7 @@ export const CHALLENGE_1_SUBTITLE_TIMESTAMPS: readonly number[] = [
  * Timestamps (in seconds) for challenge 2 subtitle lines in second-challenge.mp3.
  */
 export const CHALLENGE_2_SUBTITLE_TIMESTAMPS: readonly number[] = [
-  0.0, 6.9, 11.9, 14.8, 16.0, 19.9, 22.1, 24.8, 26.3, 27.9, 34.8, 40.7, 44.4
+  0.0, 3.7, 6.9, 12.0, 14.5, 16.0, 20.0, 22.2, 24.7, 26.3, 28.0, 34.7, 40.7, 44.4
 ] as const;
 
 /**
