@@ -81,12 +81,10 @@ export const TRIVIA_QUESTIONS_PER_ROUND = 10;
 export const TRIVIA_CORRECT_TO_PASS = 7;
 
 /** Confession challenge settings */
-export const CONFESSION_VOLUME_THRESHOLD = 0.1; // 0-1 RMS normalized (lowered for mobile mic sensitivity)
+export const CONFESSION_VOLUME_THRESHOLD = 0.04; // 0-1 RMS normalized — raw signal without AGC is lower
 export const CONFESSION_DURATION_SECONDS = 5;
-/** Sampling interval (ms) — finer granularity tolerates speech pauses better than 1s ticks */
+/** Sampling interval (ms) */
 export const CONFESSION_TICK_MS = 200;
-/** Grace period (ms) of continuous silence before progress starts decaying */
-export const CONFESSION_GRACE_MS = 800;
 
 /** Memory challenge settings */
 export const MEMORY_ROUNDS = 4;

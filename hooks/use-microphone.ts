@@ -5,14 +5,18 @@
 // Returns real-time RMS volume (0-1) from the device microphone.
 //
 // Mobile compatibility notes:
-//   - AudioContext starts "suspended" on mobile; must call resume() after creation.
+//   - AudioContext starts "suspended" on mobile; must call resume() after a user gesture.
 //   - iOS WebKit exposes webkitAudioContext instead of AudioContext on older versions.
 //   - navigator.mediaDevices is only available on HTTPS; guard before calling.
+//
+// Design notes:
+//   - getVolume() reads the AnalyserNode synchronously — no React state pipeline.
+//     Use it from setInterval/setTimeout callbacks to avoid stale closure issues.
+//   - volume state is updated via rAF loop exclusively for UI display purposes.
 // =============================================================================
 
 import { useState, useRef, useCallback, useEffect } from "react";
 
-// Resolve the AudioContext constructor with the webkit prefix fallback for iOS.
 function resolveAudioContext(): typeof AudioContext | null {
   if (typeof window === "undefined") return null;
   return (
@@ -24,7 +28,7 @@ function resolveAudioContext(): typeof AudioContext | null {
 }
 
 type MicrophoneState = {
-  /** Current RMS volume (0-1 range) */
+  /** Current RMS volume (0-1 range) — updated via rAF, for UI display only */
   volume: number;
   /** Whether the microphone is actively listening */
   isListening: boolean;
@@ -34,6 +38,12 @@ type MicrophoneState = {
   start: () => Promise<void>;
   /** Stop listening and release resources */
   stop: () => void;
+  /**
+   * Read the current RMS volume synchronously from the AnalyserNode.
+   * Use this inside setInterval/setTimeout callbacks instead of the `volume`
+   * state to avoid stale closure issues caused by the React re-render pipeline.
+   */
+  getVolume: () => number;
 };
 
 export default function useMicrophone(): MicrophoneState {
@@ -47,8 +57,9 @@ export default function useMicrophone(): MicrophoneState {
   const animationFrameRef = useRef<number>(0);
   const dataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
 
-  /** Compute RMS volume from time-domain analyser data (0-1 range) */
-  const computeRms = useCallback((): number => {
+  /** Compute RMS volume synchronously from the AnalyserNode (0-1 range).
+   *  Safe to call from any context — returns 0 if the analyser is not ready. */
+  const getVolume = useCallback((): number => {
     const analyser = analyserRef.current;
     const dataArray = dataArrayRef.current;
     if (!analyser || !dataArray) return 0;
@@ -85,13 +96,18 @@ export default function useMicrophone(): MicrophoneState {
   /** Start microphone capture and real-time volume monitoring */
   const start = useCallback(async () => {
     try {
-      // Guard: getUserMedia requires HTTPS and a supporting browser.
       if (!navigator.mediaDevices?.getUserMedia) {
         setHasError(true);
         return;
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          autoGainControl: false,
+          noiseSuppression: false,
+          echoCancellation: false,
+        },
+      });
       streamRef.current = stream;
 
       const AudioCtx = resolveAudioContext();
@@ -104,35 +120,32 @@ export default function useMicrophone(): MicrophoneState {
       const audioContext = new AudioCtx();
       audioContextRef.current = audioContext;
 
-      // Mobile browsers start AudioContext in "suspended" state.
-      // Resume must be called explicitly after a user gesture.
       if (audioContext.state === "suspended") {
         await audioContext.resume();
       }
 
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
+      // fftSize 256 → 256 time-domain samples for RMS (not 128 from frequencyBinCount)
       analyser.fftSize = 256;
       source.connect(analyser);
       analyserRef.current = analyser;
-      dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
+      dataArrayRef.current = new Uint8Array(analyser.fftSize);
 
       setIsListening(true);
 
-      // Continuous volume monitoring via rAF
+      // rAF loop — only for the volume state used by UI meters
       function updateVolume() {
-        const rms = computeRms();
-        setVolume(rms);
+        setVolume(getVolume());
         animationFrameRef.current = requestAnimationFrame(updateVolume);
       }
       updateVolume();
     } catch {
       setHasError(true);
     }
-  }, [computeRms]);
+  }, [getVolume]);
 
-  // Cleanup on unmount
   useEffect(() => stop, [stop]);
 
-  return { volume, isListening, hasError, start, stop };
+  return { volume, isListening, hasError, start, stop, getVolume };
 }
