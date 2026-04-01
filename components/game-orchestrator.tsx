@@ -7,6 +7,7 @@
 
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useGameState } from "@/hooks/use-game-state";
+import { useScreenTransition } from "@/hooks/use-screen-transition";
 import type { ChallengeId, Screen } from "@/lib/types";
 import { CHALLENGES } from "@/lib/constants";
 import {
@@ -32,6 +33,7 @@ import { ChallengeDebriefScreen } from "@/components/screens";
 import { WallGrid } from "@/components/wall";
 import { ScratchScreen } from "@/components/scratch";
 import { HUD, ScreenShell } from "@/components/ui";
+import CodecShutter from "@/components/ui/codec-shutter";
 import DebugOverlay from "@/components/ui/debug-overlay";
 
 // Challenges
@@ -65,6 +67,11 @@ export default function GameOrchestrator({ secret }: GameOrchestratorProps) {
   const [revealedCode, setRevealedCode] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Screen transitions wrapped with a CodecShutter animation.
+  // Use transitionTo() instead of setScreen() for codec-adjacent screen changes.
+  const { shutterActive, transitionTo, onShutterMidpoint, onShutterComplete } =
+    useScreenTransition(setScreen);
 
 
   // Elapsed time counter
@@ -102,9 +109,9 @@ export default function GameOrchestrator({ secret }: GameOrchestratorProps) {
 
     if (result.success && result.data) {
       restoreSession(result.data);
-      setScreen({ type: "wall" });
+      transitionTo({ type: "wall" });
     }
-  }, [secret, restoreSession, setScreen]);
+  }, [secret, restoreSession, transitionTo]);
 
   /** Resume an existing game */
   const handleResume = useCallback(async () => {
@@ -217,9 +224,9 @@ export default function GameOrchestrator({ secret }: GameOrchestratorProps) {
   /** Accept a challenge */
   const handleAcceptChallenge = useCallback(
     (challengeId: ChallengeId) => {
-      setScreen({ type: "challenge", challengeId });
+      transitionTo({ type: "challenge", challengeId });
     },
-    [setScreen],
+    [transitionTo],
   );
 
   /** Challenge completed — trigger debrief codec before elimination */
@@ -242,36 +249,36 @@ export default function GameOrchestrator({ secret }: GameOrchestratorProps) {
       }
 
       // Always transition to the debrief — the Snake call must play.
-      setScreen({
+      transitionTo({
         type: "challenge-debrief",
         challengeId,
         eliminatedIds,
       });
     },
-    [state.sessionId, completeChallenge, setScreen],
+    [state.sessionId, completeChallenge, transitionTo],
   );
 
   /** After debrief codec ends — transition to elimination animation */
   const handleDebriefComplete = useCallback(() => {
     if (state.screen.type !== "challenge-debrief") return;
     const { eliminatedIds } = state.screen;
-    setScreen({
+    transitionTo({
       type: "elimination",
       eliminatedIds,
       nextScreen: { type: "wall" },
     });
-  }, [state.screen, setScreen]);
+  }, [state.screen, transitionTo]);
 
   /** Challenge failed — shame timer, then retry the same challenge directly */
   const handleChallengeFailed = useCallback(
     (challengeId: ChallengeId) => {
-      setScreen({
+      transitionTo({
         type: "shame-timer",
         seconds: 30,
         nextScreen: { type: "challenge", challengeId },
       });
     },
-    [setScreen],
+    [transitionTo],
   );
 
   /** After elimination animation finishes */
@@ -293,10 +300,10 @@ export default function GameOrchestrator({ secret }: GameOrchestratorProps) {
     if (state.screen.type === "wall") {
       const availableChallenge = getAvailableChallenge();
       if (availableChallenge !== null) {
-        setScreen({ type: "challenge-intro", challengeId: availableChallenge });
+        transitionTo({ type: "challenge-intro", challengeId: availableChallenge });
       }
     }
-  }, [state.screen.type, getAvailableChallenge, setScreen]);
+  }, [state.screen.type, getAvailableChallenge, transitionTo]);
 
   // ==========================================================================
   // RENDER
@@ -455,6 +462,12 @@ export default function GameOrchestrator({ secret }: GameOrchestratorProps) {
   return (
     <>
       {debugOverlay}
+      {/* Screen-level shutter transition — fires on codec-adjacent screen changes */}
+      <CodecShutter
+        active={shutterActive}
+        onMidpoint={onShutterMidpoint}
+        onComplete={onShutterComplete}
+      />
       {renderScreen()}
     </>
   );
