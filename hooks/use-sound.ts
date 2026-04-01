@@ -173,6 +173,9 @@ export function useSound() {
         howl.unload();
       }
       howlsRef.current.clear();
+      // Reset so the next mount (e.g. React Strict Mode double-invoke) can
+      // re-initialize the Howl instances from scratch.
+      initializedRef.current = false;
     };
   }, []);
 

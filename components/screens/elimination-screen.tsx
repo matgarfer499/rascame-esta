@@ -3,10 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { UI } from "@/lib/i18n";
-import {
-  ELIMINATION_STAGGER_MS,
-  ELIMINATION_CONTINUE_DELAY_MS,
-} from "@/lib/constants";
+import { ELIMINATION_STAGGER_MS } from "@/lib/constants";
 import { delay } from "@/lib/utils";
 import { ScreenShell, ScanLines } from "@/components/ui";
 import { useSound } from "@/hooks";
@@ -35,28 +32,38 @@ export default function EliminationScreen({
     onCompleteRef.current = onComplete;
   }, [onComplete]);
 
+  // Play elimination sound on mount — separate from the animation loop so it
+  // fires immediately and isn't affected by eliminatedIds reference changes.
+  useEffect(() => {
+    play("elimination");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Animate cards being crossed out, show continue button at midpoint
   useEffect(() => {
     let cancelled = false;
 
     async function animateElimination() {
-      play("elimination");
+      // Show the continue button halfway through the animation so players
+      // don't have to wait for every card to be crossed out before continuing.
+      const midpoint = Math.ceil(eliminatedIds.length / 2);
 
       for (let i = 0; i < eliminatedIds.length; i++) {
         if (cancelled) break;
         await delay(ELIMINATION_STAGGER_MS);
         setRevealedCount(i + 1);
-      }
 
-      // Wait before showing continue button so the audio has time to play
-      await delay(ELIMINATION_CONTINUE_DELAY_MS);
-      if (!cancelled) setShowContinue(true);
+        if (i + 1 === midpoint && !cancelled) {
+          setShowContinue(true);
+        }
+      }
     }
 
     animateElimination();
     return () => {
       cancelled = true;
     };
-  }, [eliminatedIds, play]);
+  }, [eliminatedIds]);
 
   return (
     <ScreenShell centered>
@@ -96,10 +103,10 @@ export default function EliminationScreen({
           ))}
         </div>
 
-        {/* Continue button — appears after animation + delay */}
+        {/* Continue button — appears at animation midpoint */}
         {showContinue && (
           <button
-            onClick={onCompleteRef.current}
+            onClick={() => onCompleteRef.current()}
             className={cn(
               "w-full border border-military-green text-military-green",
               "font-condensed text-xl uppercase tracking-widest",
