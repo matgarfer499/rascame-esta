@@ -186,7 +186,7 @@ export const CODEC_SUBTITLE_TIMESTAMPS: readonly number[] = [
  * Timestamps (in seconds) for challenge 1 subtitle lines in first-challenge.mp3.
  */
 export const CHALLENGE_1_SUBTITLE_TIMESTAMPS: readonly number[] = [
-  0.0, 1.2, 8.0, 11.2, 15.0, 19.2, 23.3, 25.7, 29.7, 33.3, 35.4, 42.7, 49.3, 52.3, 55.3, 57.3
+  0.0, 3.2, 8.0, 11.2, 15.0, 19.2, 23.3, 25.7, 29.7, 33.3, 35.4, 42.7, 49.3, 52.3, 55.3, 57.3
 ] as const;
 
 /**
