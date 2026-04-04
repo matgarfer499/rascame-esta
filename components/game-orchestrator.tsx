@@ -178,6 +178,7 @@ export default function GameOrchestrator({ secret }: GameOrchestratorProps) {
         confirmCode(cardId);
 
         if (result.data.victory) {
+          if (timerRef.current) clearInterval(timerRef.current);
           setScreen({ type: "victory" });
         } else {
           setScreen({ type: "wall" });

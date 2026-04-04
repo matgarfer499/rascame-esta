@@ -5,7 +5,6 @@ import { UI } from "@/lib/i18n";
 import { formatTime } from "@/lib/utils";
 import { REAL_CODES_COUNT } from "@/lib/constants";
 import {
-  IndustrialButton,
   ScreenShell,
   ScanLines,
   TypeWriter,
@@ -33,7 +32,8 @@ export default function VictoryScreen({
         {/* Victory title with military stars */}
         <h1
           className={cn(
-            "font-condensed text-4xl text-terminal uppercase tracking-wider",
+            "font-condensed text-3xl sm:text-4xl text-terminal uppercase tracking-wider",
+            "whitespace-nowrap",
             "border-b-2 border-terminal pb-2 mb-6",
             "text-center",
           )}

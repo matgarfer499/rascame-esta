@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import AccessDeniedScreen from "@/components/screens/access-denied-screen";
 import GameOrchestrator from "@/components/game-orchestrator";
 
