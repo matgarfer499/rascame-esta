@@ -1,22 +1,20 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { UI } from "@/lib/i18n";
 import { padNumber } from "@/lib/utils";
-import { CODE_FADE_TIMER_SECONDS } from "@/lib/constants";
 import {
   IndustrialButton,
   ProgressBar,
   ScreenShell,
-  Timer,
 } from "@/components/ui";
 import ScratchCanvas from "./scratch-canvas";
 import CodeReveal from "./code-reveal";
 
 // =============================================================================
 // ScratchScreen - Full scratch experience for a single card
-// Phases: scratching → code revealed (with fade timer) → confirm/back
+// Phases: scratching → revealed (persistent, no timer) → confirm/back
 // =============================================================================
 
 type ScratchScreenProps = {
@@ -33,8 +31,6 @@ type ScratchScreenProps = {
   onBack: () => void;
 };
 
-type Phase = "scratching" | "revealed" | "faded";
-
 export default function ScratchScreen({
   cardId,
   onScratchComplete,
@@ -43,11 +39,7 @@ export default function ScratchScreen({
   onReject,
   onBack,
 }: ScratchScreenProps) {
-  const [phase, setPhase] = useState<Phase>(
-    revealedCode ? "revealed" : "scratching",
-  );
   const [coverage, setCoverage] = useState(0);
-  const [codeOpacity, setCodeOpacity] = useState(1);
   const hasNotifiedRef = useRef(false);
 
   /** Coverage threshold reached — notify parent to fetch code */
@@ -56,19 +48,6 @@ export default function ScratchScreen({
     hasNotifiedRef.current = true;
     onScratchComplete(cardId);
   }, [cardId, onScratchComplete]);
-
-  /** When code arrives from server, transition to revealed phase */
-  useEffect(() => {
-    if (revealedCode && phase === "scratching") {
-      setPhase("revealed");
-    }
-  }, [revealedCode, phase]);
-
-  /** Fade timer expired */
-  const handleFadeComplete = useCallback(() => {
-    setCodeOpacity(0);
-    setPhase("faded");
-  }, []);
 
   // Canvas dimensions (responsive to viewport)
   const canvasWidth = Math.min(320, typeof window !== "undefined" ? window.innerWidth - 48 : 280);
@@ -88,21 +67,10 @@ export default function ScratchScreen({
         </h2>
 
         {/* Scratch area */}
-        {phase === "scratching" && (
+        {!revealedCode && (
           <>
             <div className="relative">
-              {/* Code canvas underneath (hidden until scratched) */}
-              {revealedCode && (
-                <div className="absolute inset-0">
-                  <CodeReveal
-                    code={revealedCode}
-                    width={canvasWidth}
-                    height={canvasHeight}
-                  />
-                </div>
-              )}
-
-              {/* Scratch overlay on top */}
+              {/* Scratch overlay */}
               <ScratchCanvas
                 width={canvasWidth}
                 height={canvasHeight}
@@ -129,8 +97,8 @@ export default function ScratchScreen({
           </>
         )}
 
-        {/* Revealed code with fade timer */}
-        {phase === "revealed" && revealedCode && (
+        {/* Revealed code — stays visible until player confirms or rejects */}
+        {revealedCode && (
           <>
             <div className="text-center">
               <p className="font-condensed text-lg text-terminal uppercase mb-2">
@@ -141,21 +109,7 @@ export default function ScratchScreen({
                 code={revealedCode}
                 width={canvasWidth}
                 height={Math.round(canvasHeight * 0.7)}
-                opacity={codeOpacity}
               />
-
-              {/* Fade countdown */}
-              <div className="flex items-center justify-center gap-2 mt-3">
-                <span className="text-text-dead text-xs font-mono">
-                  {UI.codeFadeWarning}
-                </span>
-                <Timer
-                  initialSeconds={CODE_FADE_TIMER_SECONDS}
-                  mode="countdown"
-                  variant="alert"
-                  onComplete={handleFadeComplete}
-                />
-              </div>
             </div>
 
             <p className="text-text-dim text-[10px] font-mono text-center px-2">
@@ -182,20 +136,8 @@ export default function ScratchScreen({
           </>
         )}
 
-        {/* Faded — code gone, must re-scratch or go back */}
-        {phase === "faded" && (
-          <div className="text-center">
-            <p className="font-condensed text-xl text-alert uppercase mb-4">
-              {UI.codeRevealed}
-            </p>
-            <p className="text-text-dead text-xs font-mono mb-6">
-              El código se ha desvanecido. Vuelve al muro para rascar de nuevo.
-            </p>
-          </div>
-        )}
-
-        {/* Back button (shown only when not revealed) */}
-        {phase !== "revealed" && (
+        {/* Back button (shown only while scratching) */}
+        {!revealedCode && (
           <IndustrialButton variant="ghost" compact onClick={onBack}>
             {UI.codeBackToWall}
           </IndustrialButton>
