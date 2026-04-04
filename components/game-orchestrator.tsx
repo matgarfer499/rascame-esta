@@ -67,6 +67,7 @@ export default function GameOrchestrator({ secret }: GameOrchestratorProps) {
   const [revealedCode, setRevealedCode] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startingRef = useRef(false);
 
   // Screen transitions wrapped with a CodecShutter animation.
   // Use transitionTo() instead of setScreen() for codec-adjacent screen changes.
@@ -103,9 +104,11 @@ export default function GameOrchestrator({ secret }: GameOrchestratorProps) {
 
   /** Start a new game */
   const handleStart = useCallback(async () => {
-    setLoading(true);
+    if (startingRef.current) return;
+    startingRef.current = true;
+
     const result = await startGame(secret);
-    setLoading(false);
+    startingRef.current = false;
 
     if (result.success && result.data) {
       restoreSession(result.data);
