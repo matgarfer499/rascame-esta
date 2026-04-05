@@ -1,6 +1,5 @@
 // =============================================================================
-// Content - Personal content placeholders
-// Fill these in before launching the app.
+// Content
 // =============================================================================
 
 import type { DistractionItem, MemoryTile, TriviaQuestion } from "./types";
@@ -127,15 +126,14 @@ export const MEMORY_TILES: MemoryTile[] = [
 /**
  * Distracting content for the Boss (Liquid Final) challenge.
  * Shown during tactical silence phases to make twins laugh and fail.
- * PLACEHOLDER — replace with real inside jokes about the twins.
  */
 export const DISTRACTION_CONTENT: DistractionItem[] = [
-  { type: "text", content: "PLACEHOLDER: Frase graciosa #1" },
-  { type: "text", content: "PLACEHOLDER: Frase graciosa #2" },
-  { type: "text", content: "PLACEHOLDER: Frase graciosa #3" },
-  { type: "text", content: "PLACEHOLDER: Frase graciosa #4" },
-  { type: "text", content: "PLACEHOLDER: Frase graciosa #5" },
-  { type: "text", content: "PLACEHOLDER: Frase graciosa #6" },
-  { type: "text", content: "PLACEHOLDER: Frase graciosa #7" },
-  { type: "text", content: "PLACEHOLDER: Frase graciosa #8" },
+  { type: "text", content: "Miguel maricón" },
+  { type: "text", content: "Cristobal tienes mas nalgas que cuerpo" },
+  { type: "text", content: "Miguel chupala a dos manos" },
+  { type: "text", content: "Cristobal te huele el culo a manteca" },
+  { type: "text", content: "Gemelos, apareceis en la lista Eipstein" },
+  { type: "text", content: "El bar huele a coño cerrao por vuestra culpa" },
+  { type: "text", content: "Cristobal dijo que no tenia hambre y pidio para 4" },
+  { type: "text", content: "Miguel no se despeina, se reorganiza el unicejo" },
 ];
